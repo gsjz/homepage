@@ -3,36 +3,40 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sergio Gao's Homepage</title>
     <link rel="stylesheet" href="https://cdn.shujie.cc/notoserif-math/setting.css">
     <link rel="stylesheet" href="https://cdn.shujie.cc/notoserif/setting.css">
-    <link rel="stylesheet" href="https://cdn.shujie.cc/jbmono/setting.css"">
-    
+    <link rel="stylesheet" href="https://cdn.shujie.cc/jbmono/setting.css">
 
     <style>
         :root {
             --bg: #f8fafc;
-            --card-bg: rgba(255, 255, 255, 0.75);
+            --card-bg: rgba(255, 255, 255, 0.8);
             --border: rgba(255, 255, 255, 0.9);
-            --text-main: black;
+            --text-main: #1d1d1f;
             --text-sub: #86868b;
-            --accent: black;
+            --accent: #0071e3;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
             margin: 0;
             background: var(--bg);
             color: var(--text-main);
-            font-family:
-                "Noto Serif Math",
-                "Noto Serif SC";
+            font-family: "Noto Serif Math", "Noto Serif SC", serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 40px 20px;
+            line-height: 1.5;
         }
 
+        /* 背景装饰 */
         .bg-glow {
             position: fixed;
             top: 0;
@@ -44,9 +48,12 @@
             z-index: -1;
         }
 
+        /* 响应式容器 */
         .container {
-            width: 1250px;
+            width: 100%;
+            max-width: 1250px;
             display: grid;
+            /* 默认 PC 端三栏 */
             grid-template-columns: 280px 1fr 280px;
             gap: 20px;
             align-items: start;
@@ -55,18 +62,20 @@
         .card {
             background: var(--card-bg);
             backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
             border: 1px solid var(--border);
-            border-radius: 30px;
-            padding: 25px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.02);
-            transition: all 0.4s ease;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
         }
 
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.05);
+        /* 移动端点击反馈 */
+        .card:active {
+            transform: scale(0.98);
+            background: rgba(255, 255, 255, 0.9);
         }
 
         .label {
@@ -75,29 +84,30 @@
             text-transform: uppercase;
             letter-spacing: 1.2px;
             color: var(--text-sub);
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             display: block;
         }
 
-        /* 中间列项目样式 */
+        /* 学术项目列表 */
         .academic-row {
             display: flex;
             gap: 20px;
-            padding-bottom: 30px;
-            margin-bottom: 30px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+            padding-bottom: 24px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .academic-row:last-child {
             border-bottom: none;
             margin-bottom: 0;
+            padding-bottom: 0;
         }
 
         .abstract-box {
-            width: 200px;
-            height: 130px;
+            width: 180px;
+            height: 120px;
             background: #fff;
-            border-radius: 16px;
+            border-radius: 12px;
             flex-shrink: 0;
             border: 1px solid rgba(0, 0, 0, 0.05);
             display: flex;
@@ -109,50 +119,102 @@
 
         .academic-info h4 {
             margin: 0 0 8px 0;
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
         }
 
         .academic-info p {
             margin: 0;
-            font-size: 14.5px;
+            font-size: 14px;
             color: var(--text-sub);
-            line-height: 1.6;
         }
 
-        /* 列表通用样式 */
-        .edu-item {
-            margin-bottom: 15px;
-        }
-
-        .edu-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .edu-title {
-            font-size: 13px;
-            font-weight: 700;
-            display: block;
-        }
-
-        .edu-sub {
-            font-size: 11px;
-            color: var(--text-sub);
-            display: block;
-            margin-top: 2px;
-        }
-
+        /* 标签 */
         .pill {
             padding: 4px 10px;
             background: #fff;
-            border-radius: 8px;
+            border-radius: 6px;
             font-size: 11px;
-            margin: 2px;
+            margin: 4px 4px 0 0;
             display: inline-block;
             border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
-        /* 笔记卡片特殊动效 */
+        /* 进度条样式 */
+        .progress-container {
+            margin-bottom: 16px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--text-main);
+            border-radius: 10px;
+        }
+
+        /* ---------------- 移动端适配 (Media Queries) ---------------- */
+
+        @media (max-width: 1024px) {
+            .container {
+                /* 平板端改为两栏或堆叠 */
+                grid-template-columns: 1fr;
+                max-width: 600px;
+                /* 限制宽度，防止大屏手机显得太散 */
+            }
+
+            body {
+                padding: 20px 15px;
+            }
+
+            .academic-row {
+                flex-direction: column;
+                /* 手机端图片在上文字在下 */
+                gap: 16px;
+            }
+
+            .abstract-box {
+                width: 100%;
+                /* 图片宽度自适应 */
+                height: 160px;
+            }
+
+            .card {
+                padding: 20px;
+                /* 缩小一点内边距 */
+            }
+        }
+
+        /* 针对非常小的屏幕微调字体 */
+        @media (max-width: 375px) {
+            .academic-info h4 {
+                font-size: 16px;
+            }
+
+            .label {
+                margin-bottom: 12px;
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+        }
+
         .note-card-small::after {
             content: "";
             position: absolute;
@@ -165,26 +227,9 @@
             pointer-events: none;
         }
 
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 0.5;
-            }
-
-            50% {
-                opacity: 1;
-            }
-        }
-
         a {
             text-decoration: none;
             color: inherit;
-            transition: color 0.2s;
-        }
-
-        a:hover {
-            color: var(--accent);
         }
     </style>
 </head>
@@ -197,41 +242,41 @@
 
         <div style="display: flex; flex-direction: column; gap: 20px;">
             <div class="card" style="text-align: center;">
-                <div style="width: 70px; height: 70px; background: #fff; border-radius: 22px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(0,0,0,0.04);">
-                    <img src="/assets/penguin.svg"/>                       
+                <div
+                    style="width: 72px; height: 72px; background: #fff; border-radius: 20px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(0,0,0,0.04);">
+                    <img src="/assets/penguin.svg" style="width:40px; height:40px;" alt="Avatar" />
                 </div>
-                <h3 style="margin:0;">高书捷</h3>
-                <p style="font-size: 12px; color: var(--text-sub);">Sergio Gao</p>
-                <div style="margin-top: 15px; font-size: 11px; font-weight: 600; color: #34c759;">● 学习中</div>
+                <h3 style="margin:0; font-size: 20px;">高书捷</h3>
+                <p style="font-size: 13px; color: var(--text-sub); margin: 4px 0 0;">Sergio Gao</p>
+                <div
+                    style="margin-top: 16px; font-size: 12px; font-weight: 600; color: #34c759; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                    <span style="font-size: 8px;">●</span> 学习中
+                </div>
             </div>
 
             <div class="card">
                 <span class="label">Education</span>
-                <div class="edu-item">
-                    <span class="edu-title">杭州电子科技大学</span>
-                    <span class="edu-sub">学士·计算机科学与技术</span>
-                    <span class="edu-sub">2024 - 2028 (Expected)</span>
+                <div style="margin-bottom: 12px;">
+                    <strong style="font-size: 14px; display: block;">杭州电子科技大学</strong>
+                    <span style="font-size: 12px; color: var(--text-sub); display: block;">学士 · 计算机科学与技术</span>
+                    <span style="font-size: 11px; color: var(--text-sub); display: block; margin-top: 2px;">2024 - 2028
+                        (Expected)</span>
                 </div>
-                <!-- <div class="edu-item">
-                    <span class="edu-title">备战考研</span>
-                    <span class="edu-sub">硕士·电子信息(计算机技术)</span>
-                </div> -->
             </div>
 
             <div class="card">
                 <span class="label">Awards</span>
-                <ul style="padding: 0; margin: 0; list-style: none; font-size: 12px; line-height: 2;">
-                    <li>🥈 ICPC 亚洲区域赛(上海站) 银奖</li>
-                </ul>
+                <div style="font-size: 13px; display: flex; align-items: flex-start; gap: 8px;">
+                    <span>🥈</span>
+                    <span>ICPC 亚洲区域赛 (上海站) 银奖</span>
+                </div>
             </div>
-
-
-
             <div class="card">
                 <span class="label">Connect</span>
-                <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
-                    <a href="https://note.shujie.cc/cv.html" target="_blank">我的简历↗</a>
-                </div>
+                <a href="https://note.shujie.cc/cv.html" target="_blank"
+                    style="font-size: 14px; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 4px;">
+                    查看我的简历 <span style="font-size: 12px;">↗</span>
+                </a>
             </div>
         </div>
 
@@ -241,56 +286,58 @@
                 <div class="academic-row">
                     <div class="abstract-box">[Abstract Fig 1]</div>
                     <div class="academic-info">
-                        <h4>论文</h4>
-                        <p>摘要</p>
-                        <div style="margin-top: 10px;"><span class="pill">Paper</span><span class="pill">Theory</span>
+                        <h4>论文标题或研究课题</h4>
+                        <p>这里是关于该研究的简短摘要或核心贡献描述，在移动端会自动排在图片下方。</p>
+                        <div style="margin-top: 12px;">
+                            <span class="pill">Paper</span><span class="pill">Theory</span>
                         </div>
                     </div>
                 </div>
                 <div class="academic-row">
                     <div class="abstract-box">[Abstract Fig 2]</div>
                     <div class="academic-info">
-                        <h4>项目</h4>
-                        <p>介绍</p>
+                        <h4>开源项目 / 实践名称</h4>
+                        <p>描述该项目的技术栈以及解决的主要问题。</p>
+                        <div style="margin-top: 12px;">
+                            <span class="pill">System</span><span class="pill">C++</span>
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 20px;">
             <div class="card note-card-small">
                 <span class="label">Knowledge Base</span>
-                <a href="https://note.shujie.cc"
-                    style="color: var(--accent); font-family:'JetBrains Mono'; font-size: 18px; font-weight: 800; display: block; margin-bottom: 8px;">note.shujie.cc
-                    ↗</a>
-                <p style="margin: 0; font-size: 12px; color: var(--text-sub); line-height: 1.5;">
+                <a href="https://note.shujie.cc" target="_blank"
+                    style="color: var(--accent); font-family:'JetBrains Mono'; font-size: 18px; font-weight: 800; display: block; margin-bottom: 8px;">
+                    note.shujie.cc ↗
+                </a>
+                <p style="margin: 0; font-size: 13px; color: var(--text-sub); line-height: 1.6;">
                     记录学术笔记与技术实践的个人知识库。
                 </p>
             </div>
 
             <div class="card">
-                <span class="label">Learning</span>
+                <span class="label">Learning Progress</span>
 
-                <div style="margin-bottom: 20px;">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-size: 13px; font-weight: 700; color: #333;">《CSAPP》</span>
+                <div class="progress-container">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 13px; font-weight: 700;">《CSAPP》</span>
                         <span style="font-size: 11px; color: var(--text-sub); font-family: 'JetBrains Mono';">10%</span>
                     </div>
-                    <div style="height: 6px; background: rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden;">
-                        <div style="width: 10%; height: 100%; background: var(--accent); border-radius: 10px;"></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 10%;"></div>
                     </div>
                 </div>
 
-                <div style="margin-bottom: 8px;">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-size: 13px; font-weight: 700; color: #333;">《Stanford CS229》</span>
+                <div class="progress-container" style="margin-bottom: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 13px; font-weight: 700;">《Stanford CS229》</span>
                         <span style="font-size: 11px; color: var(--text-sub); font-family: 'JetBrains Mono';">10%</span>
                     </div>
-                    <div style="height: 6px; background: rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden;">
-                        <div style="width: 10%; height: 100%; background: var(--accent); border-radius: 10px;"></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 10%;"></div>
                     </div>
                 </div>
             </div>
