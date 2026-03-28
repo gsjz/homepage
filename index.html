@@ -106,9 +106,9 @@
 
         .abstract-box {
             width: 180px;
-            height: 120px;
+            min-height: 120px;
+            height: auto;
             background: #fff;
-            border-radius: 12px;
             flex-shrink: 0;
             border: 1px solid rgba(0, 0, 0, 0.05);
             display: flex;
@@ -116,6 +116,14 @@
             justify-content: center;
             font-size: 11px;
             color: #ccc;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .abstract-box img {
+            width: 100%;
+            height: auto;
+            display: block;
         }
 
         .academic-info h4 {
@@ -123,6 +131,35 @@
             font-size: 17px;
             font-weight: 700;
         }
+
+        /* === 标题超链接样式 开始 === */
+        .academic-info h4 a {
+            color: inherit;
+            transition: color 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px; /* 文字和箭头的间距 */
+        }
+
+        /* 悬浮时标题变色 */
+        .academic-info h4 a:hover {
+            color: var(--accent);
+        }
+
+        /* 标题旁边的箭头样式 */
+        .academic-info h4 a span {
+            font-family: 'JetBrains Mono', monospace; /* 修改了这里，应用 JetBrains Mono 字体 */
+            font-size: 14px;
+            color: var(--text-sub);
+            transition: all 0.2s ease;
+        }
+
+        /* 悬浮时箭头变色并向右上角跳动微小距离，增加动感 */
+        .academic-info h4 a:hover span {
+            color: var(--accent);
+            transform: translate(2px, -2px);
+        }
+        /* === 标题超链接样式 结束 === */
 
         .academic-info p {
             margin: 0;
@@ -167,7 +204,6 @@
                 /* 平板端改为两栏或堆叠 */
                 grid-template-columns: 1fr;
                 max-width: 600px;
-                /* 限制宽度，防止大屏手机显得太散 */
             }
 
             body {
@@ -182,13 +218,15 @@
 
             .abstract-box {
                 width: 100%;
-                /* 图片宽度自适应 */
-                height: 160px;
+                /* 移动端宽度占满 */
+                min-height: 160px;
+                /* 移动端最小高度 */
+                height: auto;
+                /* 移动端同样高度自适应 */
             }
 
             .card {
                 padding: 20px;
-                /* 缩小一点内边距 */
             }
         }
 
@@ -245,7 +283,7 @@
             <div class="card" style="text-align: center;">
                 <div
                     style="width: 72px; height: 72px; background: #fff; border-radius: 20px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(0,0,0,0.04);">
-                    <img src="/assets/penguin.svg" style="width:40px; height:40px;" alt="Avatar" />
+                    <img src="/assets/penguin.svg" style="width:40px; height:40px; object-fit: contain;" alt="Avatar" />
                 </div>
                 <h3 style="margin:0; font-size: 20px;">高书捷</h3>
                 <p style="font-size: 13px; color: var(--text-sub); margin: 4px 0 0;">Sergio Gao</p>
@@ -283,20 +321,50 @@
         <div class="card">
             <span class="label">Academic Projects & Publications</span>
             <div class="academic-list">
+
+                <div class="academic-row">
+                    <div class="abstract-box"><img src="assets/linkualog-thumbnail.svg" alt="Linkual Log Thumbnail">
+                    </div>
+                    <div class="academic-info">
+                        <h4>
+                            <a href="https://github.com/gsjz/linkualog" target="_blank">
+                                Link-ual Log <span>↗</span>
+                            </a>
+                        </h4>
+                        <p>
+                            本项目构建了一个集“跨端采集、智能清洗、个性化应用”于一体的全链路学习辅助系统。前端通过基于 Vite 和 React
+                            开发的浏览器插件及局域网图传链路，实现多源异构碎片化语料（如视频字幕、移动端图像）的无缝抓取；中端利用大模型结合人机协同机制，完成非结构化数据的清洗、去重与结构化合并，并自动部署至静态网页；后端则基于沉淀的本地
+                            JSON 私有语料库，开发了定制化的辅助复习智能体，从而打破传统题库限制，为用户提供基于真实历史语境的交互式、个性化复习体验。
+                        </p>
+                        <div style="margin-top: 12px;">
+                            <span class="pill">LLM 应用开发</span><span class="pill">油猴脚本开发</span>
+                            <span class="pill">React</span><span class="pill">Python</span>
+                        </div>
+                    </div>
+                </div>
                 <div class="academic-row">
                     <div class="abstract-box">[Abstract Fig 1]</div>
                     <div class="academic-info">
-                        <h4>论文标题或研究课题</h4>
+                        <h4>
+                            <a href="#" target="_blank">
+                                论文标题或研究课题 <span>↗</span>
+                            </a>
+                        </h4>
                         <p>这里是关于该研究的简短摘要或核心贡献描述，在移动端会自动排在图片下方。</p>
                         <div style="margin-top: 12px;">
                             <span class="pill">Paper</span><span class="pill">Theory</span>
                         </div>
                     </div>
                 </div>
+
                 <div class="academic-row">
                     <div class="abstract-box">[Abstract Fig 2]</div>
                     <div class="academic-info">
-                        <h4>开源项目 / 实践名称</h4>
+                        <h4>
+                            <a href="#" target="_blank">
+                                开源项目 / 实践名称 <span>↗</span>
+                            </a>
+                        </h4>
                         <p>描述该项目的技术栈以及解决的主要问题。</p>
                         <div style="margin-top: 12px;">
                             <span class="pill">System</span><span class="pill">C++</span>
@@ -318,12 +386,23 @@
                 </p>
             </div>
 
+            <div class="card note-card-small">
+                <span class="label">Personal Dictionary</span>
+                <a href="https://eng.shujie.cc" target="_blank"
+                    style="color: var(--accent); font-family:'JetBrains Mono'; font-size: 18px; font-weight: 800; display: block; margin-bottom: 8px;">
+                    eng.shujie.cc ↗
+                </a>
+                <p style="margin: 0; font-size: 13px; color: var(--text-sub); line-height: 1.6;">
+                    基于 Link-ual Log 构建的个人词典
+                </p>
+            </div>
+
             <div class="card">
                 <span class="label">Learning Progress</span>
 
                 <div class="progress-container">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 13px; font-weight: 700;">《CSAPP》</span>
+                        <span style="font-size: 13px; font-weight: 700;"></span>
                         <span style="font-size: 11px; color: var(--text-sub); font-family: 'JetBrains Mono';">10%</span>
                     </div>
                     <div class="progress-bar">
@@ -333,7 +412,7 @@
 
                 <div class="progress-container" style="margin-bottom: 0;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 13px; font-weight: 700;">《Stanford CS229》</span>
+                        <span style="font-size: 13px; font-weight: 700;"></span>
                         <span style="font-size: 11px; color: var(--text-sub); font-family: 'JetBrains Mono';">10%</span>
                     </div>
                     <div class="progress-bar">
@@ -341,7 +420,6 @@
                     </div>
                 </div>
             </div>
-
 
         </div>
 
