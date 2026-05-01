@@ -52,10 +52,10 @@
         /* 响应式容器 */
         .container {
             width: 100%;
-            max-width: 1250px;
+            max-width: 1160px;
             display: grid;
-            /* 默认 PC 端三栏 */
-            grid-template-columns: 280px 1fr 280px;
+            /* 默认 PC 端两栏 */
+            grid-template-columns: 280px minmax(0, 1fr);
             gap: 20px;
             align-items: start;
         }
@@ -91,11 +91,10 @@
 
         /* 学术项目列表 */
         .academic-row {
-            display: flex;
-            gap: 20px;
             padding-bottom: 24px;
             margin-bottom: 24px;
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            overflow: auto;
         }
 
         .academic-row:last-child {
@@ -105,11 +104,10 @@
         }
 
         .abstract-box {
-            width: 180px;
+            width: 340px;
             min-height: 120px;
             height: auto;
             background: #fff;
-            flex-shrink: 0;
             border: 1px solid rgba(0, 0, 0, 0.05);
             display: flex;
             align-items: center;
@@ -118,12 +116,67 @@
             color: #ccc;
             overflow: hidden;
             position: relative;
+            float: right;
+            margin: 0 0 16px 24px;
         }
 
         .abstract-box img {
             width: 100%;
             height: auto;
             display: block;
+        }
+
+        .zoomable-image {
+            cursor: zoom-in;
+        }
+
+        .image-lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+
+        .image-lightbox.is-open {
+            display: flex;
+        }
+
+        .image-lightbox__img {
+            max-width: min(100%, 1120px);
+            max-height: 84vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.35);
+        }
+
+        .image-lightbox__close {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            width: 42px;
+            height: 42px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            font-size: 28px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-lightbox__close:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .academic-info h4 {
@@ -165,6 +218,21 @@
             margin: 0;
             font-size: 14px;
             color: var(--text-sub);
+        }
+
+        .academic-info ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 14px;
+            color: var(--text-sub);
+        }
+
+        .academic-info li {
+            margin-bottom: 10px;
+        }
+
+        .academic-info li:last-child {
+            margin-bottom: 0;
         }
 
         /* 标签 */
@@ -211,13 +279,14 @@
             }
 
             .academic-row {
-                flex-direction: column;
                 /* 手机端图片在上文字在下 */
-                gap: 16px;
+                overflow: visible;
             }
 
             .abstract-box {
+                float: none;
                 width: 100%;
+                margin: 0 0 16px 0;
                 /* 移动端宽度占满 */
                 min-height: 160px;
                 /* 移动端最小高度 */
@@ -227,6 +296,15 @@
 
             .card {
                 padding: 20px;
+            }
+
+            .image-lightbox {
+                padding: 14px;
+            }
+
+            .image-lightbox__img {
+                max-height: 82vh;
+                border-radius: 10px;
             }
         }
 
@@ -283,7 +361,7 @@
             <div class="card" style="text-align: center;">
                 <div
                     style="width: 72px; height: 72px; background: #fff; border-radius: 20px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(0,0,0,0.04);">
-                    <img src="/assets/penguin.svg" style="width:40px; height:40px; object-fit: contain;" alt="Avatar" />
+                    <img src="/assets/penguin.svg" class="zoomable-image" style="width:40px; height:40px; object-fit: contain;" alt="Avatar" />
                 </div>
                 <h3 style="margin:0; font-size: 20px;">高书捷</h3>
                 <p style="font-size: 13px; color: var(--text-sub); margin: 4px 0 0;">Sergio Gao</p>
@@ -311,70 +389,12 @@
             </div>
             <div class="card">
                 <span class="label">Connect</span>
-                <a href="https://note.shujie.cc/cv.html" target="_blank"
+                <a href="http://nb.shujie.cc/private/resume" target="_blank"
                     style="font-size: 14px; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 4px;">
-                    查看我的简历 <span style="font-size: 12px;">↗</span>
+                    查看我的简历 <span style="font-size: 12px;">↗（限制 IP，暂不公开）</span>
                 </a>
             </div>
-        </div>
 
-        <div class="card">
-            <span class="label">Academic Projects & Publications</span>
-            <div class="academic-list">
-
-                <div class="academic-row">
-                    <div class="abstract-box"><img src="assets/linkualog-thumbnail.svg" alt="Linkual Log Thumbnail">
-                    </div>
-                    <div class="academic-info">
-                        <h4>
-                            <a href="https://github.com/gsjz/linkualog" target="_blank">
-                                Link-ual Log <span>↗</span>
-                            </a>
-                        </h4>
-                        <p>
-                            本项目构建了一个集“跨端采集、智能清洗、个性化应用”于一体的全链路学习辅助系统。前端通过基于 Vite 和 React
-                            开发的浏览器插件及局域网图传链路，实现多源异构碎片化语料（如视频字幕、移动端图像）的无缝抓取；中端利用大模型结合人机协同机制，完成非结构化数据的清洗、去重与结构化合并，并自动部署至静态网页；后端则基于沉淀的本地
-                            JSON 私有语料库，开发了定制化的辅助复习智能体，从而打破传统题库限制，为用户提供基于真实历史语境的交互式、个性化复习体验。
-                        </p>
-                        <div style="margin-top: 12px;">
-                            <span class="pill">LLM 应用开发</span><span class="pill">油猴脚本开发</span>
-                            <span class="pill">React</span><span class="pill">Python</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="academic-row">
-                    <div class="abstract-box">[Abstract Fig 1]</div>
-                    <div class="academic-info">
-                        <h4>
-                            <a href="#" target="_blank">
-                                论文标题或研究课题 <span>↗</span>
-                            </a>
-                        </h4>
-                        <p>这里是关于该研究的简短摘要或核心贡献描述，在移动端会自动排在图片下方。</p>
-                        <div style="margin-top: 12px;">
-                            <span class="pill">Paper</span><span class="pill">Theory</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="academic-row">
-                    <div class="abstract-box">[Abstract Fig 2]</div>
-                    <div class="academic-info">
-                        <h4>
-                            <a href="#" target="_blank">
-                                开源项目 / 实践名称 <span>↗</span>
-                            </a>
-                        </h4>
-                        <p>描述该项目的技术栈以及解决的主要问题。</p>
-                        <div style="margin-top: 12px;">
-                            <span class="pill">System</span><span class="pill">C++</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 20px;">
             <div class="card note-card-small">
                 <span class="label">Knowledge Base</span>
                 <a href="https://note.shujie.cc" target="_blank"
@@ -382,7 +402,7 @@
                     note.shujie.cc ↗
                 </a>
                 <p style="margin: 0; font-size: 13px; color: var(--text-sub); line-height: 1.6;">
-                    记录学术笔记与技术实践的个人知识库
+                    记录学术笔记与技术实践的个人知识库（迁移重构中）
                 </p>
             </div>
 
@@ -423,7 +443,105 @@
 
         </div>
 
+        <div class="card">
+            <span class="label">Academic Projects & Publications</span>
+            <div class="academic-list">
+
+                <div class="academic-row">
+                    <div class="academic-info">
+                        <h4>
+                            <a href="https://github.com/gsjz/linkualog" target="_blank">
+                                Link-ual Log <span>↗</span>
+                            </a>
+                        </h4>
+                        <div class="abstract-box"><img class="zoomable-image" src="assets/linkualog-thumbnail.svg" alt="Linkual Log Thumbnail">
+                        </div>
+                        <ul>
+                            <li>多端采集与分发：统一浏览器插件、网页端、QQ Bot 等多入口采集数据，设计标准化 JSON 词条结构（包含例句、来源、时间戳、重点词位置与复习记录），用 Docker 将后端部署到轻量云服务器上，利用 Git 追踪 JSON 数据变更以及 GitHub Actions 部署公开静态站点，支撑生词采集、整理与复习的完整数据流转。</li>
+                            <li>开发浏览器插件：抽象视频平台 Adapter 以适配多站点环境；实现字幕同步与定位（索引维护、相邻判断、二分检索），并通过分批渲染优化长列表性能，选词自动关联上下文，实现无痛采集。</li>
+                            <li>构建“采集-精修-复习”闭环系统：后端将 OCR / LLM 输出结构化为词条，精修模块支持重点词高亮、词形归并与冗余清洗；复习模块基于记忆曲线调度任务，结合 QQ Bot 打通加词、上传、查询与复习流程。</li>
+                        </ul>
+                        <div style="margin-top: 12px;">
+                            <span class="pill">LLM 应用开发</span><span class="pill">油猴脚本开发</span>
+                            <span class="pill">React</span><span class="pill">Python</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- <div class="academic-row">
+                    <div class="abstract-box">[Abstract Fig 1]</div>
+                    <div class="academic-info">
+                        <h4>
+                            <a href="#" target="_blank">
+                                论文标题或研究课题 <span>↗</span>
+                            </a>
+                        </h4>
+                        <p>这里是关于该研究的简短摘要或核心贡献描述，在移动端会自动排在图片下方。</p>
+                        <div style="margin-top: 12px;">
+                            <span class="pill">Paper</span><span class="pill">Theory</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="academic-row">
+                    <div class="abstract-box">[Abstract Fig 2]</div>
+                    <div class="academic-info">
+                        <h4>
+                            <a href="#" target="_blank">
+                                开源项目 / 实践名称 <span>↗</span>
+                            </a>
+                        </h4>
+                        <p>描述该项目的技术栈以及解决的主要问题。</p>
+                        <div style="margin-top: 12px;">
+                            <span class="pill">System</span><span class="pill">C++</span>
+                        </div>
+                    </div>
+                </div> -->
+            </div>
+        </div>
+
     </div>
+
+    <div class="image-lightbox" id="imageLightbox" aria-hidden="true">
+        <button class="image-lightbox__close" type="button" aria-label="关闭图片预览">&times;</button>
+        <img class="image-lightbox__img" src="" alt="">
+    </div>
+
+    <script>
+        const lightbox = document.getElementById("imageLightbox");
+        const lightboxImage = lightbox.querySelector(".image-lightbox__img");
+        const lightboxClose = lightbox.querySelector(".image-lightbox__close");
+
+        function openLightbox(image) {
+            lightboxImage.src = image.currentSrc || image.src;
+            lightboxImage.alt = image.alt || "";
+            lightbox.classList.add("is-open");
+            lightbox.setAttribute("aria-hidden", "false");
+            document.body.style.overflow = "hidden";
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove("is-open");
+            lightbox.setAttribute("aria-hidden", "true");
+            lightboxImage.src = "";
+            document.body.style.overflow = "";
+        }
+
+        document.querySelectorAll(".zoomable-image").forEach((image) => {
+            image.addEventListener("click", () => openLightbox(image));
+        });
+
+        lightbox.addEventListener("click", (event) => {
+            if (event.target === lightbox || event.target === lightboxClose) {
+                closeLightbox();
+            }
+        });
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && lightbox.classList.contains("is-open")) {
+                closeLightbox();
+            }
+        });
+    </script>
 
 </body>
 
