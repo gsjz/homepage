@@ -12,12 +12,15 @@
 
     <style>
         :root {
-            --bg: #f8fafc;
-            --card-bg: rgba(255, 255, 255, 0.8);
-            --border: rgba(255, 255, 255, 0.9);
-            --text-main: #1d1d1f;
-            --text-sub: #86868b;
-            --accent: #0071e3;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --border: #e5e7eb;
+            --text-main: #111827;
+            --text-sub: #6b7280;
+            --accent: #2563eb;
+            --chip-height: 1.8em;
+            --chip-icon-bottom: 0.1em;
+            --chip-text-bottom: 0.2em;
         }
 
         * {
@@ -30,104 +33,53 @@
             background: var(--bg);
             color: var(--text-main);
             font-family: "Noto Serif Math", "Noto Serif SC", serif;
+            font-variant-numeric: tabular-nums;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px;
+            padding: 24px 16px 40px;
             line-height: 1.5;
-        }
-
-        /* 背景装饰 */
-        .bg-glow {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 10% 10%, rgba(0, 113, 227, 0.04) 0%, transparent 30%),
-                radial-gradient(circle at 90% 90%, rgba(192, 132, 252, 0.05) 0%, transparent 30%);
-            z-index: -1;
         }
 
         /* 响应式容器 */
         .container {
             width: 100%;
-            max-width: 1160px;
+            max-width: 1320px;
             display: grid;
-            /* 默认 PC 端两栏 */
-            grid-template-columns: 280px minmax(0, 1fr);
-            gap: 20px;
+            grid-template-columns: 300px minmax(0, 1fr);
+            gap: 24px;
             align-items: start;
         }
 
         .card {
             background: var(--card-bg);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
             border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 24px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
             position: relative;
             overflow: hidden;
         }
 
         /* 移动端点击反馈 */
         .card:active {
-            transform: scale(0.98);
-            background: rgba(255, 255, 255, 0.9);
+            transform: none;
+            background: var(--card-bg);
         }
 
         .label {
             font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1.2px;
+            letter-spacing: 0;
             color: var(--text-sub);
-            margin-bottom: 16px;
-            display: block;
-        }
-
-        /* 学术项目列表 */
-        .academic-row {
-            padding-bottom: 24px;
-            margin-bottom: 24px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            overflow: auto;
-        }
-
-        .academic-row:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        .abstract-box {
-            width: 340px;
-            min-height: 120px;
-            height: auto;
-            background: #fff;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            color: #ccc;
-            overflow: hidden;
-            position: relative;
-            float: right;
-            margin: 0 0 16px 24px;
-        }
-
-        .abstract-box img {
-            width: 100%;
-            height: auto;
+            margin-bottom: 12px;
             display: block;
         }
 
         .zoomable-image {
-            cursor: zoom-in;
+            cursor: default;
         }
 
         .image-lightbox {
@@ -179,71 +131,253 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
-        .academic-info h4 {
-            margin: 0 0 8px 0;
-            font-size: 17px;
-            font-weight: 700;
+        a {
+            color: #2563eb;
+            text-decoration: none;
         }
 
-        /* === 标题超链接样式 开始 === */
-        .academic-info h4 a {
-            color: inherit;
-            transition: color 0.2s ease;
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 0.4em;
+        }
+
+        .row .right {
+            margin-left: auto;
+            white-space: nowrap;
+            font-size: 0.85em;
+            color: #6b7280;
+        }
+
+        .chip {
             display: inline-flex;
             align-items: center;
-            gap: 4px; /* 文字和箭头的间距 */
+            box-sizing: border-box;
+            height: var(--chip-height);
+            min-height: var(--chip-height);
+            padding: 0 0.6em;
+            margin: 0 0.4em 0.25em 0;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            line-height: 1;
+            background: #e5e7eb;
+            color: #374151;
         }
 
-        /* 悬浮时标题变色 */
-        .academic-info h4 a:hover {
-            color: var(--accent);
+        .chip-purple {
+            background: #f3e8ff;
+            color: #7e22ce;
         }
 
-        /* 标题旁边的箭头样式 */
-        .academic-info h4 a span {
-            font-family: 'JetBrains Mono', monospace; /* 修改了这里，应用 JetBrains Mono 字体 */
-            font-size: 14px;
-            color: var(--text-sub);
-            transition: all 0.2s ease;
+        .chip-indigo {
+            background: #e0e7ff;
+            color: #3730a3;
         }
 
-        /* 悬浮时箭头变色并向右上角跳动微小距离，增加动感 */
-        .academic-info h4 a:hover span {
-            color: var(--accent);
-            transform: translate(2px, -2px);
+        .chip-cyan {
+            background: #cffafe;
+            color: #0e7490;
         }
-        /* === 标题超链接样式 结束 === */
 
-        .academic-info p {
+        .chip-text {
+            display: block;
+            line-height: 1;
+            padding-bottom: var(--chip-text-bottom);
+        }
+
+        .chip-link {
+            gap: 0.28em;
+            border: 0;
+            background: #eff6ff;
+            color: #2563eb;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+
+        .chip-link:hover {
+            text-decoration: none;
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .chip-link-icon {
+            display: block;
+            width: 1rem;
+            height: 1rem;
+            flex: 0 0 auto;
+            padding-bottom: var(--chip-icon-bottom);
+            object-fit: contain;
+            object-position: center;
+        }
+
+        .chip-link-icon-github {
+            width: 0.98rem;
+            height: 0.98rem;
+        }
+
+        .chip-link-arrow {
+            display: block;
+            font-size: 0.85em;
+            line-height: 1;
+            padding-bottom: var(--chip-text-bottom);
+            color: currentColor;
+        }
+
+        .project-experience-list {
+            margin-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+
+        .project-item {
             margin: 0;
+            padding: 0;
+        }
+
+        .project-item + .project-item {
+            border-top: 1px solid var(--border);
+        }
+
+        .project-item summary {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 16px 0;
+            cursor: pointer;
+            list-style: none;
+        }
+
+        .project-item summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .project-item summary::after {
+            content: "▸";
+            flex: 0 0 auto;
+            color: var(--text-sub);
             font-size: 14px;
+            line-height: 1;
+            padding-top: 4px;
+        }
+
+        .project-item[open] summary::after {
+            content: "▾";
+        }
+
+        .project-summary-main {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .project-summary-main h2 {
+            margin: 0 0 0.3rem;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .project-summary-tags {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .project-summary-date {
+            flex: 0 0 auto;
+            white-space: nowrap;
+            margin-top: 0.1rem;
+            font-size: 0.85em;
             color: var(--text-sub);
         }
 
-        .academic-info ul {
+        .project-summary-note {
+            margin: 0.45rem 0 0;
+            font-size: 13px;
+            color: var(--text-sub);
+            line-height: 1.6;
+        }
+
+        .project-item-head {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 16px 0;
+        }
+
+        .project-item summary.project-item-head {
+            cursor: pointer;
+            list-style: none;
+        }
+
+        .project-item summary.project-item-head::-webkit-details-marker {
+            display: none;
+        }
+
+        .project-item summary.project-item-head::after {
+            content: "▸";
+            flex: 0 0 auto;
+            color: var(--text-sub);
+            font-size: 14px;
+            line-height: 1;
+            padding-top: 4px;
+        }
+
+        .project-item[open] summary.project-item-head::after {
+            content: "▾";
+        }
+
+        .project-item-static .project-item-head {
+            cursor: default;
+        }
+
+        .project-item-body {
+            padding: 0 0 16px;
+        }
+
+        .project-detail-list {
             margin: 0;
-            padding-left: 20px;
-            font-size: 14px;
+            padding: 0;
+            list-style: none;
+        }
+
+        .project-detail-list li {
+            position: relative;
+            padding-left: 1.2em;
+            margin: 0.25em 0;
+            line-height: 1.6;
+        }
+
+        .project-detail-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: gray;
+            font-weight: bold;
+        }
+
+        .project-note {
+            margin: 0;
+            font-size: 13px;
             color: var(--text-sub);
+            line-height: 1.7;
         }
 
-        .academic-info li {
-            margin-bottom: 10px;
+        .project-figure {
+            width: min(100%, 720px);
+            margin: 0.9rem auto 0;
         }
 
-        .academic-info li:last-child {
-            margin-bottom: 0;
-        }
-
-        /* 标签 */
-        .pill {
-            padding: 4px 10px;
-            background: #fff;
-            border-radius: 6px;
-            font-size: 11px;
-            margin: 4px 4px 0 0;
-            display: inline-block;
-            border: 1px solid rgba(0, 0, 0, 0.05);
+        .project-thumb-inline {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
         }
 
         /* 进度条样式 */
@@ -269,33 +403,16 @@
 
         @media (max-width: 1024px) {
             .container {
-                /* 平板端改为两栏或堆叠 */
                 grid-template-columns: 1fr;
                 max-width: 600px;
             }
 
             body {
-                padding: 20px 15px;
-            }
-
-            .academic-row {
-                /* 手机端图片在上文字在下 */
-                overflow: visible;
-            }
-
-            .abstract-box {
-                float: none;
-                width: 100%;
-                margin: 0 0 16px 0;
-                /* 移动端宽度占满 */
-                min-height: 160px;
-                /* 移动端最小高度 */
-                height: auto;
-                /* 移动端同样高度自适应 */
+                padding: 16px 12px 32px;
             }
 
             .card {
-                padding: 20px;
+                padding: 18px;
             }
 
             .image-lightbox {
@@ -310,58 +427,22 @@
 
         /* 针对非常小的屏幕微调字体 */
         @media (max-width: 375px) {
-            .academic-info h4 {
-                font-size: 16px;
-            }
-
             .label {
                 margin-bottom: 12px;
             }
-        }
-
-        /* 动画效果 */
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 0.4;
-            }
-
-            50% {
-                opacity: 0.8;
-            }
-        }
-
-        .note-card-small::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 100% 100%, rgba(0, 113, 227, 0.08), transparent 70%);
-            animation: pulse 6s infinite ease-in-out;
-            pointer-events: none;
-        }
-
-        a {
-            text-decoration: none;
-            color: inherit;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="bg-glow"></div>
-
     <div class="container">
 
         <div style="display: flex; flex-direction: column; gap: 20px;">
             <div class="card" style="text-align: center;">
                 <div
-                    style="width: 72px; height: 72px; background: #fff; border-radius: 20px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(0,0,0,0.04);">
-                    <img src="/assets/penguin.svg" class="zoomable-image" style="width:40px; height:40px; object-fit: contain;" alt="Avatar" />
+                    style="width: 72px; height: 72px; background: #fff; border-radius: 8px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border);">
+                    <img src="assets/penguin.svg" class="zoomable-image" style="width:40px; height:40px; object-fit: contain;" alt="Avatar" />
                 </div>
                 <h3 style="margin:0; font-size: 20px;">高书捷</h3>
                 <p style="font-size: 13px; color: var(--text-sub); margin: 4px 0 0;">Sergio Gao</p>
@@ -389,6 +470,10 @@
             </div>
             <div class="card">
                 <span class="label">Connect</span>
+                <div style="font-size: 14px; color: var(--text-main); margin-bottom: 8px;">
+                    <span style="font-weight: 600;">个人邮箱:</span>
+                    <span>sergiogao@qq.com</span>
+                </div>
                 <a href="http://nb.shujie.cc/private/resume" target="_blank"
                     style="font-size: 14px; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 4px;">
                     查看我的简历 <span style="font-size: 12px;">↗（限制 IP，暂不公开）</span>
@@ -443,59 +528,112 @@
 
         </div>
 
-        <div class="card">
-            <span class="label">Academic Projects & Publications</span>
-            <div class="academic-list">
-
-                <div class="academic-row">
-                    <div class="academic-info">
-                        <h4>
-                            <a href="https://github.com/gsjz/linkualog" target="_blank">
-                                Link-ual Log <span>↗</span>
-                            </a>
-                        </h4>
-                        <div class="abstract-box"><img class="zoomable-image" src="assets/linkualog-thumbnail.svg" alt="Linkual Log Thumbnail">
+        <div class="card project-experience-card">
+            <span class="label">Project Experience</span>
+            <div class="project-experience-list">
+                <details class="project-item">
+                    <summary class="project-item-head">
+                        <div class="project-summary-main">
+                            <h2>Link-ual Log: 为外语学习者设计的数据采集与记忆调度工具集</h2>
+                            <div class="project-summary-tags">
+                                <span class="chip chip-purple"><span class="chip-text">个人项目</span></span>
+                                <span class="chip"><span class="chip-text">LLM 应用开发</span></span>
+                                <span class="chip"><span class="chip-text">油猴脚本</span></span>
+                                <span class="chip"><span class="chip-text">QQ Bot</span></span>
+                                <a class="chip chip-link" href="https://github.com/gsjz/linkualog" target="_blank">
+                                    <img class="chip-link-icon chip-link-icon-github" src="assets/icon/github.svg" alt="" aria-hidden="true" />
+                                    <span class="chip-text">[仓库]</span>
+                                    <span class="chip-link-arrow" aria-hidden="true">↗</span>
+                                </a>
+                            </div>
+                            <p class="project-summary-note">三端采集、词条结构与复习调度打通了从记录到回顾的完整词汇工作流。</p>
                         </div>
-                        <ul>
-                            <li>多端采集与分发：统一浏览器插件、网页端、QQ Bot 等多入口采集数据，设计标准化 JSON 词条结构（包含例句、来源、时间戳、重点词位置与复习记录），用 Docker 将后端部署到轻量云服务器上，利用 Git 追踪 JSON 数据变更以及 GitHub Actions 部署公开静态站点，支撑生词采集、整理与复习的完整数据流转。</li>
-                            <li>开发浏览器插件：抽象视频平台 Adapter 以适配多站点环境；实现字幕同步与定位（索引维护、相邻判断、二分检索），并通过分批渲染优化长列表性能，选词自动关联上下文，实现无痛采集。</li>
-                            <li>构建“采集-精修-复习”闭环系统：后端将 OCR / LLM 输出结构化为词条，精修模块支持重点词高亮、词形归并与冗余清洗；复习模块基于记忆曲线调度任务，结合 QQ Bot 打通加词、上传、查询与复习流程。</li>
+                        <span class="project-summary-date">(2026.03 - 2026.04)</span>
+                    </summary>
+                    <div class="project-item-body">
+                        <ul class="project-detail-list">
+                            <li>
+                                <strong>多端采集与分发</strong>：统一浏览器插件、网页端、QQ Bot 等多入口采集数据，设计标准化词条结构（包含例句、来源、时间戳、重点词位置与复习记录），基于 Docker 将后端部署到轻量云服务器，基于 Git 追踪数据变更，以及 GitHub Actions 持续部署公开静态站点，支撑生词采集、整理与复习的完整数据流转。
+                            </li>
+                            <li>
+                                <strong>开发浏览器插件</strong>：基于 vite-plugin-monkey 搭建现代化用户脚本工程，使浏览器插件开发支持 React、组件化拆分、模块化目录组织；抽象视频平台 Adapter 以适配多站点环境；实现字幕同步与定位（索引维护、相邻判断、二分检索），并通过分批渲染优化长列表性能，选词自动关联上下文，实现无痛采集。
+                            </li>
+                            <li>
+                                <strong>体验与记忆调度优化</strong>：优化“加词-精修-复习”低摩擦学习路径，降低心智成本；用大模型语义评分用户回忆结果，结合遗忘曲线与熟悉度反馈动态调整复习间隔，并通过 QQ Bot 提醒、查询提升任务可达性。
+                            </li>
                         </ul>
-                        <div style="margin-top: 12px;">
-                            <span class="pill">LLM 应用开发</span><span class="pill">油猴脚本开发</span>
-                            <span class="pill">React</span><span class="pill">Python</span>
+                        <div class="project-figure">
+                            <img class="project-thumb-inline" src="assets/linkualog-architecture.svg" alt="Link-ual Log 项目缩略图">
                         </div>
                     </div>
-                </div>
-                <!-- <div class="academic-row">
-                    <div class="abstract-box">[Abstract Fig 1]</div>
-                    <div class="academic-info">
-                        <h4>
-                            <a href="#" target="_blank">
-                                论文标题或研究课题 <span>↗</span>
-                            </a>
-                        </h4>
-                        <p>这里是关于该研究的简短摘要或核心贡献描述，在移动端会自动排在图片下方。</p>
-                        <div style="margin-top: 12px;">
-                            <span class="pill">Paper</span><span class="pill">Theory</span>
-                        </div>
-                    </div>
-                </div>
+                </details>
 
-                <div class="academic-row">
-                    <div class="abstract-box">[Abstract Fig 2]</div>
-                    <div class="academic-info">
-                        <h4>
-                            <a href="#" target="_blank">
-                                开源项目 / 实践名称 <span>↗</span>
-                            </a>
-                        </h4>
-                        <p>描述该项目的技术栈以及解决的主要问题。</p>
-                        <div style="margin-top: 12px;">
-                            <span class="pill">System</span><span class="pill">C++</span>
+                <details class="project-item">
+                    <summary class="project-item-head">
+                        <div class="project-summary-main">
+                            <h2>个人笔记本</h2>
+                            <div class="project-summary-tags">
+                                <span class="chip chip-purple"><span class="chip-text">个人项目</span></span>
+                                <span class="chip"><span class="chip-text">CI/CD</span></span>
+                                <a class="chip chip-link" href="https://note.shujie.cc/" target="_blank">
+                                    <img class="chip-link-icon" src="assets/icon/chrome.svg" alt="" aria-hidden="true" />
+                                    <span class="chip-text">[公开页面]</span>
+                                    <span class="chip-link-arrow" aria-hidden="true">↗</span>
+                                </a>
+                                <a class="chip chip-link" href="https://github.com/gsjz/notebook" target="_blank">
+                                    <img class="chip-link-icon chip-link-icon-github" src="assets/icon/github.svg" alt="" aria-hidden="true" />
+                                    <span class="chip-text">[公开仓库]</span>
+                                    <span class="chip-link-arrow" aria-hidden="true">↗</span>
+                                </a>
+                            </div>
+                            <p class="project-summary-note">通过子集导出 workflow 分离私有仓库与公开仓库，串起本地编写、热重载预览和同步发布。</p>
+                        </div>
+                        <span class="project-summary-date">(长期)</span>
+                    </summary>
+                    <div class="project-item-body">
+                        <div class="project-figure">
+                            <img class="project-thumb-inline" src="assets/notebook-workflow.svg" alt="个人笔记本工作流示意图">
                         </div>
                     </div>
-                </div> -->
+                </details>
+
+                <article class="project-item project-item-static">
+                    <div class="project-item-head">
+                        <div class="project-summary-main">
+                            <h2>私有服务网关与主机运维平台设计</h2>
+                            <div class="project-summary-tags">
+                                <span class="chip chip-purple"><span class="chip-text">个人项目</span></span>
+                                <span class="chip"><span class="chip-text">Linux</span></span>
+                                <a class="chip chip-link" href="https://note.shujie.cc/public/ai/llm-api-gateway/" target="_blank">
+                                    <img class="chip-link-icon" src="assets/icon/chrome.svg" alt="" aria-hidden="true" />
+                                    <span class="chip-text">[技术笔记]</span>
+                                    <span class="chip-link-arrow" aria-hidden="true">↗</span>
+                                </a>
+                            </div>
+                            <p class="project-summary-note">围绕私有服务入口、主机维护与运维自动化的方案整理。</p>
+                        </div>
+                        <span class="project-summary-date">(长期)</span>
+                    </div>
+                </article>
+
+                <article class="project-item project-item-static">
+                    <div class="project-item-head">
+                        <div class="project-summary-main">
+                            <h2>OI-wiki Pisano 周期文档重构</h2>
+                            <div class="project-summary-tags">
+                                <span class="chip chip-indigo"><span class="chip-text">社区贡献</span></span>
+                                <span class="chip"><span class="chip-text">数学证明</span></span>
+                                <a class="chip chip-link" href="https://github.com/OI-wiki/OI-wiki/pull/6726" target="_blank">
+                                    <img class="chip-link-icon chip-link-icon-github" src="assets/icon/github.svg" alt="" aria-hidden="true" />
+                                    <span class="chip-text">[PR]</span>
+                                    <span class="chip-link-arrow" aria-hidden="true">↗</span>
+                                </a>
+                            </div>
+                            <p class="project-summary-note">对 Pisano 周期相关内容做了结构重写，并补充了数学证明表达。</p>
+                        </div>
+                        <span class="project-summary-date">(2025.12)</span>
+                    </div>
+                </article>
             </div>
         </div>
 
