@@ -231,7 +231,7 @@
     <g class="shadow" transform="translate(0 70)">
       <rect x="50" y="32" width="360" height="76" rx="10" fill="#ffffff" stroke="#e5e7eb" stroke-width="1.2"/>
       <use href="#logo-tailscale" x="75" y="50" width="40" height="40"/>
-      <text class="node-title" x="130" y="65">http://nb.shujie.cc</text>
+      <text class="node-title" x="130" y="65">Private Preview</text>
       <text class="node-subtitle" x="130" y="85">[Private] Hot Reload Preview with Tailscale</text>
     </g>
   </g>
