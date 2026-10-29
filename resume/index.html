@@ -246,6 +246,8 @@
                 const input = document.querySelector("#access-key");
                 const button = document.querySelector("#unlock-button");
                 const message = document.querySelector("#unlock-message");
+                const messageText = document.querySelector("#unlock-message-text");
+                const defaultMessage = messageText.textContent;
                 const loadStatus = document.querySelector("#resume-load-status");
                 const loadIndicator = document.querySelector("#resume-load-indicator");
                 const loadProgress = document.querySelector("#resume-load-progress");
@@ -257,7 +259,9 @@
                 let retryCredential;
 
                 function showMessage(text, invalid = false) {
-                    message.textContent = text;
+                    const content = text || defaultMessage;
+                    if (messageText.textContent !== content) messageText.textContent = content;
+                    message.classList.toggle("is-hint", !text);
                     message.classList.toggle("is-error", invalid);
                     input.setAttribute("aria-invalid", String(invalid));
                 }
@@ -341,7 +345,7 @@
                     if (payloadPromise) return payloadPromise;
                     payloadReady = false;
                     showProgress(0, 1);
-                    showLoadState("loading", "简历加载中，可先输入访问密钥。");
+                    showLoadState("loading", "加载中…");
                     payloadPromise = (async () => {
                         const controller = new AbortController();
                         const timeout = setTimeout(() => controller.abort(), 45000);
@@ -380,7 +384,7 @@
                     })().catch(error => {
                         payloadPromise = null;
                         payloadFailed = true;
-                        showLoadState("error", "简历加载失败，可点击下方按钮重试。");
+                        showLoadState("error", "加载失败，请重试。");
                         throw error;
                     });
                     return payloadPromise;
@@ -497,12 +501,12 @@
                 if (!window.isSecureContext || !window.crypto?.subtle) {
                     input.disabled = true;
                     button.disabled = true;
-                    showLoadState("error", "当前环境无法打开简历。");
+                    showLoadState("error", "无法打开简历。");
                     showMessage("请使用支持安全解密的现代浏览器，通过 HTTPS 打开此页面。");
                     return;
                 }
                 if (typeof DecompressionStream !== "function") {
-                    showLoadState("error", "当前浏览器需要更新。");
+                    showLoadState("error", "请更新浏览器。");
                     showMessage("请更新浏览器后打开此页面。");
                     return;
                 }
@@ -553,20 +557,13 @@
         }
         .document-heading {
             display: flex;
-            align-items: baseline;
-            justify-content: space-between;
+            align-items: center;
             gap: 20px;
+            margin-bottom: 24px;
             padding-bottom: 12px;
             border-bottom: 2px solid #e5e7eb;
         }
-        h1 { margin: 0; font-size: 26px; line-height: 1.4; font-weight: 700; }
-        .document-mark {
-            color: #9ca3af;
-            font: italic 11px/1.4 Georgia, "Times New Roman", serif;
-            letter-spacing: .16em;
-        }
-        .description { margin: 20px 0 28px; color: #6b7280; font-size: 13px; line-height: 1.9; }
-        label { display: block; margin-bottom: 10px; font-size: 13px; font-weight: 700; }
+        h1 { flex-shrink: 0; margin: 0; font-size: 26px; line-height: 1.4; font-weight: 700; }
         input, button { width: 100%; min-height: 44px; border-radius: 2px; }
         input {
             display: block;
@@ -593,17 +590,19 @@
         button:hover:not(:disabled) { background: #eaf2ff; border-color: #b9d1f4; }
         button:focus-visible { outline: 2px solid #bfdbfe; outline-offset: 3px; }
         button:disabled { opacity: .65; cursor: default; }
-        .message { min-height: 20px; margin: 10px 0 0; color: #6b7280; font-size: 12px; line-height: 1.65; }
+        .message { display: flex; align-items: flex-start; gap: 8px; min-height: 20px; margin: 10px 0 0; color: #6b7280; font-size: 12px; line-height: 1.65; }
+        .message svg { flex-shrink: 0; margin-top: 3px; }
+        .message.is-hint { color: #9ca3af; }
         .message.is-error { color: #b42318; }
-        .load-indicator { margin: 0 0 14px; color: #6b7280; }
-        .load-caption { display: flex; align-items: center; gap: 8px; min-height: 22px; }
+        .load-indicator { flex: 0 1 240px; min-width: 0; margin: 0 0 0 auto; color: #6b7280; }
+        .load-caption { display: flex; align-items: center; gap: 6px; min-height: 22px; }
         .load-status { flex: 1; margin: 0; font-size: 12px; line-height: 1.65; }
         .load-symbol { width: 13px; height: 13px; flex: 0 0 13px; color: #7b9bc8; }
         .load-spinner { transform-origin: center; }
         [data-phase="loading"] .load-spinner, [data-phase="decrypting"] .load-spinner { animation: load-spin 900ms linear infinite; }
         .load-complete, .load-error { display: none; }
         .load-percent { font: 11px/1.4 Georgia, "Times New Roman", serif; font-variant-numeric: tabular-nums; }
-        .load-track { height: 2px; margin-top: 9px; overflow: hidden; background: #edf0f4; }
+        .load-track { height: 2px; margin-top: 6px; overflow: hidden; background: #edf0f4; }
         .load-fill {
             display: block; height: 100%; background: #93b4ea;
             transform: scaleX(var(--load-progress, 0)); transform-origin: left;
@@ -615,18 +614,6 @@
         [data-phase="error"] .load-track { background: #f5eaea; }
         [data-phase="error"] .load-fill { background: #e0aaaa; }
         @keyframes load-spin { to { transform: rotate(360deg); } }
-        .document-footer {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            margin: 22px 0 0;
-            padding-top: 16px;
-            border-top: 1px dashed #e5e7eb;
-            color: #9ca3af;
-            font-size: 11px;
-            line-height: 1.8;
-        }
-        .document-footer svg { flex-shrink: 0; margin-top: 3px; }
         noscript p { margin: 0 0 20px; color: #b42318; font-size: 13px; line-height: 1.7; }
         @media (max-width: 380px) {
             main { padding: 24px 14px; }
@@ -644,12 +631,6 @@
         <section class="card" aria-labelledby="unlock-title">
             <header class="document-heading">
                 <h1 id="unlock-title">简历</h1>
-                <span class="document-mark" aria-hidden="true">RESUME</span>
-            </header>
-            <p class="description">请输入访问密钥，查看完整简历。</p>
-            <noscript><p>请启用 JavaScript，以解锁并查看简历。</p></noscript>
-            <form id="unlock-form" autocomplete="off">
-                <label for="access-key">访问密钥</label>
                 <div id="resume-load-indicator" class="load-indicator" data-phase="idle">
                     <div class="load-caption">
                         <svg class="load-symbol" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
@@ -664,20 +645,22 @@
                         <span class="load-fill"></span>
                     </div>
                 </div>
-                <input id="access-key" type="password" placeholder="粘贴访问密钥" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="unlock-message resume-load-status" aria-invalid="false" disabled>
+            </header>
+            <noscript><p>请启用 JavaScript，以解锁并查看简历。</p></noscript>
+            <form id="unlock-form" autocomplete="off">
+                <input id="access-key" type="password" aria-label="访问密钥" placeholder="粘贴访问密钥" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="unlock-message resume-load-status" aria-invalid="false" disabled>
                 <button id="unlock-button" type="submit" disabled>查看简历</button>
-                <p id="unlock-message" class="message" role="status" aria-live="polite"></p>
+                <p id="unlock-message" class="message is-hint" role="status" aria-live="polite">
+                    <svg aria-hidden="true" width="12" height="14" viewBox="0 0 24 28" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="11" width="18" height="14" rx="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4M12 16v4" />
+                    </svg>
+                    <span id="unlock-message-text">密钥会在此浏览器中记忆</span>
+                </p>
             </form>
-            <p class="document-footer">
-                <svg aria-hidden="true" width="12" height="14" viewBox="0 0 24 28" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <rect x="3" y="11" width="18" height="14" rx="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4M12 16v4" />
-                </svg>
-                <span>此浏览器会自动记忆，后续无需重复输入。</span>
-            </p>
         </section>
     </main>
-    <script type="application/json" id="resume-payload">{"version":3,"algorithm":"AES-256-GCM","compression":"gzip","path":"resume-1566d6c91414a404b4895a87184ffdcf93f625db7efb8d6cbb60c00d1374f37a.html.enc","sha256":"1566d6c91414a404b4895a87184ffdcf93f625db7efb8d6cbb60c00d1374f37a","size":614425}</script>
+    <script type="application/json" id="resume-payload">{"version":3,"algorithm":"AES-256-GCM","compression":"gzip","path":"resume-1eb54707b96cea4abbb00d443195022dddad95429318e39361f7ca605f5f76da.html.enc","sha256":"1eb54707b96cea4abbb00d443195022dddad95429318e39361f7ca605f5f76da","size":615104}</script>
 </body>
 
 </html>
