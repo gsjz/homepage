@@ -10,528 +10,599 @@
     <link rel="icon" href="data:,">
     <title>简历</title>
     <script>
-        (() => {
-            const scope = location.pathname.replace(/index\.html$/, "").replace(/\/$/, "") || "/";
+(() => {
+    const scope = location.pathname.replace(/index\.html$/, "").replace(/\/$/, "") || "/";
 
-            const storageKey = "resume-access:v1:" + scope;
+    const storageKey = "resume-access:v1:" + scope;
 
-            function savedKey() {
-                try { return localStorage.getItem(storageKey) || ""; }
-                catch { return ""; }
+    function savedKey() {
+        try { return localStorage.getItem(storageKey) || ""; }
+        catch { return ""; }
+    }
+
+    function forgetKey(expected) {
+        try {
+            if (expected === undefined || localStorage.getItem(storageKey) === expected) {
+                localStorage.removeItem(storageKey);
             }
+            return true;
+        } catch { return false; }
+    }
 
-            function forgetKey(expected) {
+    function addMemoryControls(remembered, accessKey, pdfKey) {
+        const pdfInfo = JSON.parse(document.querySelector("#resume-pdf").textContent);
+        if (pdfInfo.version !== 1 || !/^[a-f0-9]{64}$/.test(pdfInfo.sha256)
+            || pdfInfo.path !== "resume-" + pdfInfo.sha256 + ".pdf.enc"
+            || typeof pdfInfo.filename !== "string"
+            || !/^[^/\\\x00-\x1f]{1,100}\.pdf$/.test(pdfInfo.filename)) {
+            throw new Error("Invalid PDF descriptor");
+        }
+        const style = document.createElement("style");
+        style.id = "resume-access-controls-style";
+        style.textContent = `
+            #resume-access-controls {
+                position: fixed; right: max(16px, env(safe-area-inset-right));
+                bottom: max(16px, env(safe-area-inset-bottom)); z-index: 10;
+                display: flex; align-items: center; gap: 2px; padding: 4px;
+                border: 1px solid #e5e7eb; border-radius: 3px;
+                background: #fff; color: #6b7280; box-shadow: 0 2px 10px #1118270a;
+            }
+            #resume-access-controls button {
+                display: grid; place-items: center; width: 42px; height: 42px;
+                margin: 0; padding: 0; border: 0; border-radius: 2px;
+                background: transparent; color: inherit; cursor: pointer;
+                transition: color 200ms, background-color 200ms;
+            }
+            #resume-access-controls button:hover { background: #f3f4f6; color: #2563eb; }
+            #resume-access-controls button:focus-visible { outline: 2px solid #bfdbfe; outline-offset: 1px; }
+            #resume-access-controls button:disabled { opacity: .45; cursor: wait; }
+            #resume-access-controls button[data-success] { color: #2563eb; }
+            #resume-access-controls button + button { position: relative; }
+            #resume-access-controls button + button::before {
+                content: ""; position: absolute; left: -1px; top: 13px;
+                width: 1px; height: 16px; background: #e5e7eb;
+            }
+            #resume-access-controls svg {
+                display: block; width: 18px; height: 18px; fill: none;
+                stroke: currentColor; stroke-width: 1.5;
+                stroke-linecap: round; stroke-linejoin: round;
+            }
+            #resume-memory-note {
+                position: absolute; right: 0; bottom: calc(100% + 10px);
+                width: max-content; max-width: min(280px, calc(100vw - 32px));
+                margin: 0; padding: 9px 12px; border: 1px solid #e5e7eb;
+                border-radius: 3px; background: #fff; color: #6b7280;
+                font: 12px/1.7 "Noto Serif SC", "Songti SC", "SimSun", serif;
+                box-shadow: 0 2px 10px #1118270a;
+            }
+            #resume-memory-note:empty { display: none; }
+            .resume-copy-buffer { position: fixed; left: -9999px; top: 0; opacity: 0; font-size: 16px; }
+            @media print { #resume-access-controls { display: none !important; } }
+            @media (prefers-reduced-motion: reduce) {
+                #resume-access-controls button { transition: none; }
+            }
+        `;
+        document.head.append(style);
+        const controls = document.createElement("aside");
+        controls.id = "resume-access-controls";
+        controls.setAttribute("aria-label", "简历工具");
+        const note = document.createElement("p");
+        note.id = "resume-memory-note";
+        note.setAttribute("role", "status");
+        note.setAttribute("aria-live", "polite");
+        let noteTimer;
+        function notify(text, duration = 3500) {
+            clearTimeout(noteTimer);
+            note.textContent = text;
+            if (duration) noteTimer = setTimeout(() => { note.textContent = ""; }, duration);
+        }
+        function action(id, label, paths) {
+            const button = document.createElement("button");
+            button.id = id;
+            button.type = "button";
+            button.title = label;
+            button.setAttribute("aria-label", label);
+            const ns = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(ns, "svg");
+            svg.setAttribute("viewBox", "0 0 24 24");
+            svg.setAttribute("aria-hidden", "true");
+            paths.forEach(d => {
+                const path = document.createElementNS(ns, "path");
+                path.setAttribute("d", d);
+                svg.append(path);
+            });
+            button.append(svg);
+            controls.append(button);
+            return button;
+        }
+        const forget = action("forget-resume-key", "清除记忆并锁定", [
+            "M7 10V7a5 5 0 0 1 10 0v3",
+            "M6 10h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z",
+            "M12 14v3",
+        ]);
+        forget.title = (remembered ? "此浏览器已记住访问权限；" : "") + "清除记忆并锁定";
+        forget.addEventListener("click", () => {
+            if (forgetKey()) {
+                accessKey = "";
+                pdfKey = null;
+                history.replaceState(null, "", location.pathname + location.search);
+                location.reload();
+            } else {
+                notify("未能清除，请在浏览器设置中清除此网站数据", 0);
+            }
+        });
+        const copy = action("copy-resume-link", "复制带密钥链接", [
+            "M10 13a5 5 0 0 0 7 .5l3-3a5 5 0 0 0-7-7l-1.5 1.5",
+            "M14 11a5 5 0 0 0-7-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5",
+        ]);
+        function legacyCopy(url) {
+            const buffer = document.createElement("textarea");
+            buffer.className = "resume-copy-buffer";
+            buffer.value = url;
+            buffer.readOnly = true;
+            buffer.setAttribute("aria-hidden", "true");
+            const previous = document.activeElement;
+            const x = scrollX;
+            const y = scrollY;
+            document.body.append(buffer);
+            try {
+                buffer.focus({preventScroll: true});
+                buffer.select();
+                if (!document.execCommand("copy")) throw new Error("Copy unavailable");
+            } finally {
+                buffer.remove();
+                previous?.focus({preventScroll: true});
+                if (scrollX !== x || scrollY !== y) scrollTo(x, y);
+            }
+        }
+        copy.addEventListener("click", async () => {
+            if (copy.disabled) return;
+            const wasFocused = document.activeElement === copy;
+            copy.disabled = true;
+            const url = new URL(location.href);
+            url.hash = new URLSearchParams({pwd: accessKey}).toString();
+            try {
+                try { await navigator.clipboard.writeText(url.href); }
+                catch { legacyCopy(url.href); }
+                copy.setAttribute("data-success", "");
+                notify("已复制带密钥链接");
+                setTimeout(() => copy.removeAttribute("data-success"), 2000);
+            } catch {
+                notify("复制失败，请复制地址栏中的完整链接");
+            } finally {
+                copy.disabled = false;
+                if (wasFocused && document.activeElement === document.body) {
+                    copy.focus({preventScroll: true});
+                }
+            }
+        });
+        const pdf = action("save-resume-pdf", "保存为 PDF", [
+            "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z",
+            "M14 2v6h6", "M12 11v7m-3-3 3 3 3-3",
+        ]);
+        pdf.addEventListener("click", async () => {
+            if (pdf.disabled) return;
+            const wasFocused = document.activeElement === pdf;
+            pdf.disabled = true;
+            pdf.setAttribute("aria-busy", "true");
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 45000);
+            try {
+                notify("正在准备 PDF…", 0);
+                const response = await fetch(new URL(pdfInfo.path, location.href), {
+                    credentials: "omit", referrerPolicy: "no-referrer", redirect: "error",
+                    mode: "same-origin", cache: "force-cache", signal: controller.signal,
+                });
+                if (!response.ok) throw new Error("PDF unavailable");
+                const encrypted = new Uint8Array(await response.arrayBuffer());
+                const magic = [82, 80, 68, 70, 1]; // RPDF + format version.
+                if (encrypted.length < 33 || !magic.every((byte, index) => encrypted[index] === byte)) {
+                    throw new Error("Invalid encrypted PDF");
+                }
+                const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", encrypted));
+                const checksum = Array.from(digest, byte => byte.toString(16).padStart(2, "0")).join("");
+                if (checksum !== pdfInfo.sha256) throw new Error("PDF version mismatch");
+                const bytes = new Uint8Array(await crypto.subtle.decrypt({
+                    name: "AES-GCM", iv: encrypted.subarray(5, 17),
+                    additionalData: new TextEncoder().encode("resume:pdf:v1"), tagLength: 128,
+                }, pdfKey, encrypted.subarray(17)));
+                if (new TextDecoder().decode(bytes.subarray(0, 5)) !== "%PDF-") {
+                    throw new Error("Invalid PDF");
+                }
+                const downloadUrl = URL.createObjectURL(new Blob([bytes], {type: "application/pdf"}));
+                const link = document.createElement("a");
+                link.href = downloadUrl;
+                link.download = pdfInfo.filename;
+                link.hidden = true;
+                document.body.append(link);
+                try { link.click(); }
+                finally {
+                    link.remove();
+                    setTimeout(() => URL.revokeObjectURL(downloadUrl), 60000);
+                }
+                notify("PDF 已准备好下载");
+            } catch {
+                notify("PDF 下载失败，请重试；若页面已更新，请刷新后再试");
+            } finally {
+                clearTimeout(timeout);
+                pdf.disabled = false;
+                pdf.removeAttribute("aria-busy");
+                if (wasFocused && document.activeElement === document.body) {
+                    pdf.focus({preventScroll: true});
+                }
+            }
+        });
+        controls.append(note);
+        document.body.append(controls);
+        if (!remembered) notify("浏览器未能保存，可收藏当前链接", 0);
+    }
+
+    function linkKey() {
+        return new URLSearchParams(location.hash.slice(1)).get("pwd") || "";
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.querySelector("#unlock-form");
+        const input = document.querySelector("#access-key");
+        const button = document.querySelector("#unlock-button");
+        const message = document.querySelector("#unlock-message");
+        const messageText = document.querySelector("#unlock-message-text");
+        const defaultMessage = messageText.textContent;
+        const loadStatus = document.querySelector("#resume-load-status");
+        const loadIndicator = document.querySelector("#resume-load-indicator");
+        const loadProgress = document.querySelector("#resume-load-progress");
+        const loadPercent = document.querySelector("#resume-load-percent");
+        const copy = JSON.parse(document.querySelector("#loading-messages").textContent);
+        const idleLines = copy.messages.filter(line => !line.effect);
+        const face = document.querySelector("#unlock-face");
+        const calculation = document.querySelector("#unlock-calculation");
+        const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+        let busy = false;
+        let payloadPromise;
+        let payloadReady = false;
+        let payloadFailed = false;
+        let retryCredential;
+        let playTimer = 0, playStarted = 0, textStarted = 0, nextCalculation = 0;
+        let lastLine, messageOverride = false;
+
+        function showMessage(text, invalid = false) {
+            messageOverride = Boolean(text);
+            lastLine = null;
+            message.classList.remove("is-playful");
+            message.setAttribute("aria-live", "polite");
+            message.removeAttribute("title");
+            face.hidden = calculation.hidden = true;
+            face.textContent = calculation.textContent = "";
+            const content = text || defaultMessage;
+            if (messageText.textContent !== content) messageText.textContent = content;
+            message.classList.toggle("is-hint", !text);
+            message.classList.toggle("is-error", invalid);
+            input.setAttribute("aria-invalid", String(invalid));
+        }
+
+        function showLoadState(phase, text) {
+            loadIndicator.dataset.phase = phase;
+            loadStatus.textContent = text;
+            if (phase === "error") stopLoading();
+        }
+
+        function showProgress(value) {
+            const percent = Math.floor(value);
+            if (loadProgress.getAttribute("aria-valuenow") === String(percent)) return;
+            loadProgress.setAttribute("aria-valuenow", String(percent));
+            loadProgress.style.setProperty("--load-progress", String(percent / 100));
+            loadPercent.textContent = percent + "%";
+        }
+
+        function stopLoading(done = false) {
+            clearTimeout(playTimer);
+            playTimer = 0;
+            if (done) showProgress(100);
+            if (!messageOverride) showMessage("");
+        }
+
+        function loadingTick() {
+            const now = performance.now();
+            if (!payloadReady) showProgress(99 * (1 - Math.exp(-(now - playStarted) / 6000)));
+            if (!messageOverride && !document.hidden) {
+                const lines = busy ? copy.messages : idleLines;
+                const line = lines[Math.floor((now - textStarted) / 3300) % lines.length];
+                if (line && line !== lastLine) {
+                    message.classList.add("is-playful", "is-hint");
+                    message.setAttribute("aria-live", "off");
+                    messageText.textContent = line.text;
+                    message.title = line.text + " " + line.face;
+                    face.textContent = line.face;
+                    face.hidden = false;
+                    calculation.hidden = line.effect !== "xor-demo";
+                    calculation.textContent = "";
+                    calculation.title = copy.calculationNote;
+                    nextCalculation = 0;
+                    lastLine = line;
+                }
+                if (line && !calculation.hidden && now >= nextCalculation
+                    && (!reducedMotion.matches || !calculation.textContent)) {
+                    // Decorative arithmetic uses independent random bytes, never credentials.
+                    const [a, b] = crypto.getRandomValues(new Uint8Array(2));
+                    const hex = n => n.toString(16).padStart(2, "0");
+                    calculation.textContent = hex(a) + "⊕" + hex(b) + "=" + hex(a ^ b);
+                    nextCalculation = now + 360;
+                }
+            }
+            playTimer = setTimeout(loadingTick, 180);
+        }
+
+        function startLoading() {
+            if (playTimer) return;
+            playStarted = textStarted = performance.now();
+            loadingTick();
+        }
+
+        async function readPayload(response, size) {
+            if (!response.body?.getReader) {
+                const bytes = new Uint8Array(await response.arrayBuffer());
+                if (bytes.length !== size) throw new Error("Resume size mismatch");
+                return bytes;
+            }
+            const bytes = new Uint8Array(size);
+            const reader = response.body.getReader();
+            let received = 0;
+            try {
+                while (true) {
+                    const {done, value} = await reader.read();
+                    if (done) break;
+                    if (received + value.length > size) throw new Error("Resume size mismatch");
+                    bytes.set(value, received);
+                    received += value.length;
+                }
+                if (received !== size) throw new Error("Resume size mismatch");
+                return bytes;
+            } catch (error) {
+                await reader.cancel().catch(() => {});
+                throw error;
+            } finally {
+                reader.releaseLock();
+            }
+        }
+
+        async function decompressResume(bytes) {
+            const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+            const reader = stream.getReader();
+            const chunks = [];
+            let size = 0;
+            try {
+                while (true) {
+                    const {done, value} = await reader.read();
+                    if (done) break;
+                    size += value.length;
+                    if (size > 16 * 1024 * 1024) throw new Error("Resume exceeds size limit");
+                    chunks.push(value);
+                }
+                if (size === 0) throw new Error("Empty resume");
+                return await new Blob(chunks).arrayBuffer();
+            } catch (error) {
+                await reader.cancel().catch(() => {});
+                throw error;
+            } finally {
+                reader.releaseLock();
+            }
+        }
+
+        function decodeBase64Url(value) {
+            if (typeof value !== "string" || !/^[A-Za-z0-9_-]+$/.test(value)) {
+                throw new Error("Invalid encoding");
+            }
+            const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+            return Uint8Array.from(atob(base64 + "=".repeat((4 - base64.length % 4) % 4)),
+                (character) => character.charCodeAt(0));
+        }
+
+        function loadResume() {
+            if (payloadPromise) return payloadPromise;
+            payloadReady = false;
+            showProgress(0);
+            showLoadState("loading", copy.states.loading.status);
+            startLoading();
+            payloadPromise = (async () => {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 45000);
                 try {
-                    if (expected === undefined || localStorage.getItem(storageKey) === expected) {
-                        localStorage.removeItem(storageKey);
+                    const manifest = JSON.parse(document.querySelector("#resume-payload").textContent);
+                    if (manifest.version !== 3 || manifest.algorithm !== "AES-256-GCM"
+                        || manifest.compression !== "gzip"
+                        || !Number.isSafeInteger(manifest.size) || manifest.size < 34
+                        || manifest.size > 16 * 1024 * 1024
+                        || !/^[a-f0-9]{64}$/.test(manifest.sha256)
+                        || manifest.path !== "resume-" + manifest.sha256 + ".html.enc") {
+                        throw new Error("Invalid resume manifest");
                     }
-                    return true;
-                } catch { return false; }
-            }
-
-            function addMemoryControls(remembered, accessKey, pdfKey) {
-                const pdfInfo = JSON.parse(document.querySelector("#resume-pdf").textContent);
-                if (pdfInfo.version !== 1 || !/^[a-f0-9]{64}$/.test(pdfInfo.sha256)
-                    || pdfInfo.path !== "resume-" + pdfInfo.sha256 + ".pdf.enc"
-                    || typeof pdfInfo.filename !== "string"
-                    || !/^[^/\\\x00-\x1f]{1,100}\.pdf$/.test(pdfInfo.filename)) {
-                    throw new Error("Invalid PDF descriptor");
-                }
-                const style = document.createElement("style");
-                style.id = "resume-access-controls-style";
-                style.textContent = `
-                    #resume-access-controls {
-                        position: fixed; right: max(16px, env(safe-area-inset-right));
-                        bottom: max(16px, env(safe-area-inset-bottom)); z-index: 10;
-                        display: flex; align-items: center; gap: 2px; padding: 4px;
-                        border: 1px solid #e5e7eb; border-radius: 3px;
-                        background: #fff; color: #6b7280; box-shadow: 0 2px 10px #1118270a;
-                    }
-                    #resume-access-controls button {
-                        display: grid; place-items: center; width: 42px; height: 42px;
-                        margin: 0; padding: 0; border: 0; border-radius: 2px;
-                        background: transparent; color: inherit; cursor: pointer;
-                        transition: color 200ms, background-color 200ms;
-                    }
-                    #resume-access-controls button:hover { background: #f3f4f6; color: #2563eb; }
-                    #resume-access-controls button:focus-visible { outline: 2px solid #bfdbfe; outline-offset: 1px; }
-                    #resume-access-controls button:disabled { opacity: .45; cursor: wait; }
-                    #resume-access-controls button[data-success] { color: #2563eb; }
-                    #resume-access-controls button + button { position: relative; }
-                    #resume-access-controls button + button::before {
-                        content: ""; position: absolute; left: -1px; top: 13px;
-                        width: 1px; height: 16px; background: #e5e7eb;
-                    }
-                    #resume-access-controls svg {
-                        display: block; width: 18px; height: 18px; fill: none;
-                        stroke: currentColor; stroke-width: 1.5;
-                        stroke-linecap: round; stroke-linejoin: round;
-                    }
-                    #resume-memory-note {
-                        position: absolute; right: 0; bottom: calc(100% + 10px);
-                        width: max-content; max-width: min(280px, calc(100vw - 32px));
-                        margin: 0; padding: 9px 12px; border: 1px solid #e5e7eb;
-                        border-radius: 3px; background: #fff; color: #6b7280;
-                        font: 12px/1.7 "Noto Serif SC", "Songti SC", "SimSun", serif;
-                        box-shadow: 0 2px 10px #1118270a;
-                    }
-                    #resume-memory-note:empty { display: none; }
-                    .resume-copy-buffer { position: fixed; left: -9999px; top: 0; opacity: 0; font-size: 16px; }
-                    @media print { #resume-access-controls { display: none !important; } }
-                    @media (prefers-reduced-motion: reduce) {
-                        #resume-access-controls button { transition: none; }
-                    }
-                `;
-                document.head.append(style);
-                const controls = document.createElement("aside");
-                controls.id = "resume-access-controls";
-                controls.setAttribute("aria-label", "简历工具");
-                const note = document.createElement("p");
-                note.id = "resume-memory-note";
-                note.setAttribute("role", "status");
-                note.setAttribute("aria-live", "polite");
-                let noteTimer;
-                function notify(text, duration = 3500) {
-                    clearTimeout(noteTimer);
-                    note.textContent = text;
-                    if (duration) noteTimer = setTimeout(() => { note.textContent = ""; }, duration);
-                }
-                function action(id, label, paths) {
-                    const button = document.createElement("button");
-                    button.id = id;
-                    button.type = "button";
-                    button.title = label;
-                    button.setAttribute("aria-label", label);
-                    const ns = "http://www.w3.org/2000/svg";
-                    const svg = document.createElementNS(ns, "svg");
-                    svg.setAttribute("viewBox", "0 0 24 24");
-                    svg.setAttribute("aria-hidden", "true");
-                    paths.forEach(d => {
-                        const path = document.createElementNS(ns, "path");
-                        path.setAttribute("d", d);
-                        svg.append(path);
+                    const response = await fetch(new URL(manifest.path, location.href), {
+                        credentials: "omit", referrerPolicy: "no-referrer", redirect: "error",
+                        mode: "same-origin", cache: payloadFailed ? "reload" : "force-cache",
+                        signal: controller.signal,
                     });
-                    button.append(svg);
-                    controls.append(button);
-                    return button;
+                    if (!response.ok) throw new Error("Resume unavailable");
+                    const encrypted = await readPayload(response, manifest.size);
+                    showLoadState("loading", "正在校验简历…");
+                    const magic = [82, 72, 84, 77, 76, 2]; // RHTML + compressed format version.
+                    if (encrypted.length < 34 || !magic.every((byte, index) => encrypted[index] === byte)) {
+                        throw new Error("Invalid encrypted resume");
+                    }
+                    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", encrypted));
+                    const checksum = Array.from(digest, byte => byte.toString(16).padStart(2, "0")).join("");
+                    if (checksum !== manifest.sha256) throw new Error("Resume version mismatch");
+                    payloadReady = true;
+                    payloadFailed = false;
+                    if (!busy) {
+                        stopLoading(true);
+                        showLoadState("ready", "简历已就绪。");
+                    }
+                    return encrypted;
+                } finally {
+                    clearTimeout(timeout);
                 }
-                const forget = action("forget-resume-key", "清除记忆并锁定", [
-                    "M7 10V7a5 5 0 0 1 10 0v3",
-                    "M6 10h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z",
-                    "M12 14v3",
-                ]);
-                forget.title = (remembered ? "此浏览器已记住访问权限；" : "") + "清除记忆并锁定";
-                forget.addEventListener("click", () => {
-                    if (forgetKey()) {
-                        accessKey = "";
-                        pdfKey = null;
-                        history.replaceState(null, "", location.pathname + location.search);
-                        location.reload();
-                    } else {
-                        notify("未能清除，请在浏览器设置中清除此网站数据", 0);
-                    }
-                });
-                const copy = action("copy-resume-link", "复制带密钥链接", [
-                    "M10 13a5 5 0 0 0 7 .5l3-3a5 5 0 0 0-7-7l-1.5 1.5",
-                    "M14 11a5 5 0 0 0-7-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5",
-                ]);
-                function legacyCopy(url) {
-                    const buffer = document.createElement("textarea");
-                    buffer.className = "resume-copy-buffer";
-                    buffer.value = url;
-                    buffer.readOnly = true;
-                    buffer.setAttribute("aria-hidden", "true");
-                    const previous = document.activeElement;
-                    const x = scrollX;
-                    const y = scrollY;
-                    document.body.append(buffer);
-                    try {
-                        buffer.focus({preventScroll: true});
-                        buffer.select();
-                        if (!document.execCommand("copy")) throw new Error("Copy unavailable");
-                    } finally {
-                        buffer.remove();
-                        previous?.focus({preventScroll: true});
-                        if (scrollX !== x || scrollY !== y) scrollTo(x, y);
-                    }
-                }
-                copy.addEventListener("click", async () => {
-                    if (copy.disabled) return;
-                    const wasFocused = document.activeElement === copy;
-                    copy.disabled = true;
-                    const url = new URL(location.href);
-                    url.hash = new URLSearchParams({pwd: accessKey}).toString();
-                    try {
-                        try { await navigator.clipboard.writeText(url.href); }
-                        catch { legacyCopy(url.href); }
-                        copy.setAttribute("data-success", "");
-                        notify("已复制带密钥链接");
-                        setTimeout(() => copy.removeAttribute("data-success"), 2000);
-                    } catch {
-                        notify("复制失败，请复制地址栏中的完整链接");
-                    } finally {
-                        copy.disabled = false;
-                        if (wasFocused && document.activeElement === document.body) {
-                            copy.focus({preventScroll: true});
-                        }
-                    }
-                });
-                const pdf = action("save-resume-pdf", "保存为 PDF", [
-                    "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z",
-                    "M14 2v6h6", "M12 11v7m-3-3 3 3 3-3",
-                ]);
-                pdf.addEventListener("click", async () => {
-                    if (pdf.disabled) return;
-                    const wasFocused = document.activeElement === pdf;
-                    pdf.disabled = true;
-                    pdf.setAttribute("aria-busy", "true");
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 45000);
-                    try {
-                        notify("正在准备 PDF…", 0);
-                        const response = await fetch(new URL(pdfInfo.path, location.href), {
-                            credentials: "omit", referrerPolicy: "no-referrer", redirect: "error",
-                            mode: "same-origin", cache: "force-cache", signal: controller.signal,
-                        });
-                        if (!response.ok) throw new Error("PDF unavailable");
-                        const encrypted = new Uint8Array(await response.arrayBuffer());
-                        const magic = [82, 80, 68, 70, 1]; // RPDF + format version.
-                        if (encrypted.length < 33 || !magic.every((byte, index) => encrypted[index] === byte)) {
-                            throw new Error("Invalid encrypted PDF");
-                        }
-                        const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", encrypted));
-                        const checksum = Array.from(digest, byte => byte.toString(16).padStart(2, "0")).join("");
-                        if (checksum !== pdfInfo.sha256) throw new Error("PDF version mismatch");
-                        const bytes = new Uint8Array(await crypto.subtle.decrypt({
-                            name: "AES-GCM", iv: encrypted.subarray(5, 17),
-                            additionalData: new TextEncoder().encode("resume:pdf:v1"), tagLength: 128,
-                        }, pdfKey, encrypted.subarray(17)));
-                        if (new TextDecoder().decode(bytes.subarray(0, 5)) !== "%PDF-") {
-                            throw new Error("Invalid PDF");
-                        }
-                        const downloadUrl = URL.createObjectURL(new Blob([bytes], {type: "application/pdf"}));
-                        const link = document.createElement("a");
-                        link.href = downloadUrl;
-                        link.download = pdfInfo.filename;
-                        link.hidden = true;
-                        document.body.append(link);
-                        try { link.click(); }
-                        finally {
-                            link.remove();
-                            setTimeout(() => URL.revokeObjectURL(downloadUrl), 60000);
-                        }
-                        notify("PDF 已准备好下载");
-                    } catch {
-                        notify("PDF 下载失败，请重试；若页面已更新，请刷新后再试");
-                    } finally {
-                        clearTimeout(timeout);
-                        pdf.disabled = false;
-                        pdf.removeAttribute("aria-busy");
-                        if (wasFocused && document.activeElement === document.body) {
-                            pdf.focus({preventScroll: true});
-                        }
-                    }
-                });
-                controls.append(note);
-                document.body.append(controls);
-                if (!remembered) notify("浏览器未能保存，可收藏当前链接", 0);
+            })().catch(error => {
+                payloadPromise = null;
+                payloadFailed = true;
+                showLoadState("error", "加载失败，请重试。");
+                if (!busy && !messageOverride) showMessage("加载失败，请重试。");
+                throw error;
+            });
+            return payloadPromise;
+        }
+
+        async function unlock(value, fromMemory = false) {
+            if (busy) {
+                return;
             }
 
-            function linkKey() {
-                return new URLSearchParams(location.hash.slice(1)).get("pwd") || "";
+            let token = value.trim();
+            value = "";
+            if (!token) {
+                showMessage("请输入访问密钥。", true);
+                input.focus();
+                return;
             }
 
-            document.addEventListener("DOMContentLoaded", () => {
-                const form = document.querySelector("#unlock-form");
-                const input = document.querySelector("#access-key");
-                const button = document.querySelector("#unlock-button");
-                const message = document.querySelector("#unlock-message");
-                const messageText = document.querySelector("#unlock-message-text");
-                const defaultMessage = messageText.textContent;
-                const loadStatus = document.querySelector("#resume-load-status");
-                const loadIndicator = document.querySelector("#resume-load-indicator");
-                const loadProgress = document.querySelector("#resume-load-progress");
-                const loadPercent = document.querySelector("#resume-load-percent");
-                let busy = false;
-                let payloadPromise;
-                let payloadReady = false;
-                let payloadFailed = false;
-                let retryCredential;
+            busy = true;
+            input.value = "";
+            input.disabled = true;
+            button.disabled = true;
+            button.textContent = "正在解锁…";
+            form.setAttribute("aria-busy", "true");
+            showMessage("");
+            textStarted = performance.now();
+            startLoading();
+            let keyBytes;
+            let stage = "key";
+            retryCredential = null;
 
-                function showMessage(text, invalid = false) {
-                    const content = text || defaultMessage;
-                    if (messageText.textContent !== content) messageText.textContent = content;
-                    message.classList.toggle("is-hint", !text);
-                    message.classList.toggle("is-error", invalid);
-                    input.setAttribute("aria-invalid", String(invalid));
+            try {
+                if (!/^[A-Za-z0-9_-]{43}$/.test(token)) {
+                    throw new Error("Invalid key");
                 }
-
-                function showLoadState(phase, text) {
-                    loadIndicator.dataset.phase = phase;
-                    loadStatus.textContent = text;
+                keyBytes = decodeBase64Url(token);
+                const canonical = btoa(String.fromCharCode(...keyBytes))
+                    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+                if (keyBytes.length !== 32 || canonical !== token) {
+                    throw new Error("Invalid key");
                 }
+                const key = await crypto.subtle.importKey(
+                    "raw", keyBytes, { name: "AES-GCM" }, false, ["decrypt"],
+                );
+                keyBytes.fill(0);
 
-                function showProgress(received, total) {
-                    const percent = Math.min(100, Math.floor(received / total * 100));
-                    if (loadProgress.getAttribute("aria-valuenow") === String(percent)) return;
-                    loadProgress.setAttribute("aria-valuenow", String(percent));
-                    loadProgress.style.setProperty("--load-progress", String(percent / 100));
-                    loadPercent.textContent = percent + "%";
+                stage = "load";
+                if (!payloadReady) {
+                    button.textContent = "正在加载简历…";
                 }
+                const encrypted = await loadResume();
+                stage = "decrypt";
+                button.textContent = "正在解锁…";
+                showLoadState("decrypting", "正在打开简历…");
+                showMessage("");
+                const decrypted = await crypto.subtle.decrypt({
+                    name: "AES-GCM",
+                    iv: encrypted.subarray(6, 18),
+                    additionalData: new TextEncoder().encode("resume:html:gzip:v1"),
+                    tagLength: 128,
+                }, key, encrypted.subarray(18));
+                stage = "render";
+                const expanded = await decompressResume(decrypted);
+                const html = new TextDecoder("utf-8", { fatal: true }).decode(expanded);
+                // Remember only after authenticated decryption has succeeded.
+                let remembered = false;
+                try {
+                    localStorage.setItem(storageKey, token);
+                    remembered = true;
+                } catch { /* Storage restrictions must not prevent this visit. */ }
+                const fragment = new URLSearchParams({pwd: token}).toString();
+                history.replaceState(null, "", location.pathname + location.search + "#" + fragment);
 
-                async function readPayload(response, size) {
-                    showProgress(0, size);
-                    if (!response.body?.getReader) {
-                        const bytes = new Uint8Array(await response.arrayBuffer());
-                        if (bytes.length !== size) throw new Error("Resume size mismatch");
-                        showProgress(size, size);
-                        return bytes;
+                // Load a complete document so the resume's layout/print scripts run normally.
+                stopLoading(true);
+                document.open();
+                document.write(html);
+                document.close();
+                addMemoryControls(remembered, token, key);
+            } catch {
+                stopLoading();
+                if (stage === "load") {
+                    retryCredential = {token, fromMemory};
+                    showMessage("简历加载失败，请重试；若页面已更新，请刷新后再试。");
+                } else if (stage === "key" || stage === "decrypt") {
+                    if (payloadReady) {
+                        showProgress(100);
+                        showLoadState("ready", "简历已就绪。");
                     }
-                    const bytes = new Uint8Array(size);
-                    const reader = response.body.getReader();
-                    let received = 0;
-                    try {
-                        while (true) {
-                            const {done, value} = await reader.read();
-                            if (done) break;
-                            if (received + value.length > size) throw new Error("Resume size mismatch");
-                            bytes.set(value, received);
-                            received += value.length;
-                            showProgress(received, size);
-                        }
-                        if (received !== size) throw new Error("Resume size mismatch");
-                        return bytes;
-                    } catch (error) {
-                        await reader.cancel().catch(() => {});
-                        throw error;
-                    } finally {
-                        reader.releaseLock();
-                    }
+                    if (fromMemory) forgetKey(token);
+                    showMessage(fromMemory ? "已保存的密钥已失效，请重新输入访问密钥。"
+                        : "无法解锁，请检查访问密钥后重试。", true);
+                } else {
+                    showLoadState("error", "简历打开失败。");
+                    showMessage("页面打开失败，请刷新后重试。");
                 }
-
-                async function decompressResume(bytes) {
-                    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
-                    const reader = stream.getReader();
-                    const chunks = [];
-                    let size = 0;
-                    try {
-                        while (true) {
-                            const {done, value} = await reader.read();
-                            if (done) break;
-                            size += value.length;
-                            if (size > 16 * 1024 * 1024) throw new Error("Resume exceeds size limit");
-                            chunks.push(value);
-                        }
-                        if (size === 0) throw new Error("Empty resume");
-                        return await new Blob(chunks).arrayBuffer();
-                    } catch (error) {
-                        await reader.cancel().catch(() => {});
-                        throw error;
-                    } finally {
-                        reader.releaseLock();
-                    }
-                }
-
-                function decodeBase64Url(value) {
-                    if (typeof value !== "string" || !/^[A-Za-z0-9_-]+$/.test(value)) {
-                        throw new Error("Invalid encoding");
-                    }
-                    const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
-                    return Uint8Array.from(atob(base64 + "=".repeat((4 - base64.length % 4) % 4)),
-                        (character) => character.charCodeAt(0));
-                }
-
-                function loadResume() {
-                    if (payloadPromise) return payloadPromise;
-                    payloadReady = false;
-                    showProgress(0, 1);
-                    showLoadState("loading", "加载中…");
-                    payloadPromise = (async () => {
-                        const controller = new AbortController();
-                        const timeout = setTimeout(() => controller.abort(), 45000);
-                        try {
-                            const manifest = JSON.parse(document.querySelector("#resume-payload").textContent);
-                            if (manifest.version !== 3 || manifest.algorithm !== "AES-256-GCM"
-                                || manifest.compression !== "gzip"
-                                || !Number.isSafeInteger(manifest.size) || manifest.size < 34
-                                || manifest.size > 16 * 1024 * 1024
-                                || !/^[a-f0-9]{64}$/.test(manifest.sha256)
-                                || manifest.path !== "resume-" + manifest.sha256 + ".html.enc") {
-                                throw new Error("Invalid resume manifest");
-                            }
-                            const response = await fetch(new URL(manifest.path, location.href), {
-                                credentials: "omit", referrerPolicy: "no-referrer", redirect: "error",
-                                mode: "same-origin", cache: payloadFailed ? "reload" : "force-cache",
-                                signal: controller.signal,
-                            });
-                            if (!response.ok) throw new Error("Resume unavailable");
-                            const encrypted = await readPayload(response, manifest.size);
-                            showLoadState("loading", "正在校验简历…");
-                            const magic = [82, 72, 84, 77, 76, 2]; // RHTML + compressed format version.
-                            if (encrypted.length < 34 || !magic.every((byte, index) => encrypted[index] === byte)) {
-                                throw new Error("Invalid encrypted resume");
-                            }
-                            const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", encrypted));
-                            const checksum = Array.from(digest, byte => byte.toString(16).padStart(2, "0")).join("");
-                            if (checksum !== manifest.sha256) throw new Error("Resume version mismatch");
-                            payloadReady = true;
-                            payloadFailed = false;
-                            showLoadState("ready", "简历已就绪。");
-                            return encrypted;
-                        } finally {
-                            clearTimeout(timeout);
-                        }
-                    })().catch(error => {
-                        payloadPromise = null;
-                        payloadFailed = true;
-                        showLoadState("error", "加载失败，请重试。");
-                        throw error;
-                    });
-                    return payloadPromise;
-                }
-
-                async function unlock(value, fromMemory = false) {
-                    if (busy) {
-                        return;
-                    }
-
-                    let token = value.trim();
-                    value = "";
-                    if (!token) {
-                        showMessage("请输入访问密钥。", true);
-                        input.focus();
-                        return;
-                    }
-
-                    busy = true;
-                    input.value = "";
-                    input.disabled = true;
-                    button.disabled = true;
-                    button.textContent = "正在解锁…";
-                    form.setAttribute("aria-busy", "true");
-                    showMessage("");
-                    let keyBytes;
-                    let stage = "key";
-                    retryCredential = null;
-
-                    try {
-                        if (!/^[A-Za-z0-9_-]{43}$/.test(token)) {
-                            throw new Error("Invalid key");
-                        }
-                        keyBytes = decodeBase64Url(token);
-                        const canonical = btoa(String.fromCharCode(...keyBytes))
-                            .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-                        if (keyBytes.length !== 32 || canonical !== token) {
-                            throw new Error("Invalid key");
-                        }
-                        const key = await crypto.subtle.importKey(
-                            "raw", keyBytes, { name: "AES-GCM" }, false, ["decrypt"],
-                        );
-                        keyBytes.fill(0);
-
-                        stage = "load";
-                        if (!payloadReady) {
-                            button.textContent = "正在加载简历…";
-                            showMessage("正在加载简历，完成后将自动解锁。");
-                        }
-                        const encrypted = await loadResume();
-                        stage = "decrypt";
-                        button.textContent = "正在解锁…";
-                        showLoadState("decrypting", "正在打开简历…");
-                        showMessage("");
-                        const decrypted = await crypto.subtle.decrypt({
-                            name: "AES-GCM",
-                            iv: encrypted.subarray(6, 18),
-                            additionalData: new TextEncoder().encode("resume:html:gzip:v1"),
-                            tagLength: 128,
-                        }, key, encrypted.subarray(18));
-                        stage = "render";
-                        const expanded = await decompressResume(decrypted);
-                        const html = new TextDecoder("utf-8", { fatal: true }).decode(expanded);
-                        // Remember only after authenticated decryption has succeeded.
-                        let remembered = false;
-                        try {
-                            localStorage.setItem(storageKey, token);
-                            remembered = true;
-                        } catch { /* Storage restrictions must not prevent this visit. */ }
-                        const fragment = new URLSearchParams({pwd: token}).toString();
-                        history.replaceState(null, "", location.pathname + location.search + "#" + fragment);
-
-                        // Load a complete document so the resume's layout/print scripts run normally.
-                        document.open();
-                        document.write(html);
-                        document.close();
-                        addMemoryControls(remembered, token, key);
-                    } catch {
-                        if (stage === "load") {
-                            retryCredential = {token, fromMemory};
-                            showMessage("简历加载失败，请重试；若页面已更新，请刷新后再试。");
-                        } else if (stage === "key" || stage === "decrypt") {
-                            if (payloadReady) showLoadState("ready", "简历已就绪。");
-                            if (fromMemory) forgetKey(token);
-                            showMessage(fromMemory ? "已保存的密钥已失效，请重新输入访问密钥。"
-                                : "无法解锁，请检查访问密钥后重试。", true);
-                        } else {
-                            showLoadState("error", "简历打开失败。");
-                            showMessage("页面打开失败，请刷新后重试。");
-                        }
-                        input.disabled = false;
-                        button.disabled = false;
-                        button.textContent = retryCredential ? "重试加载" : "查看简历";
-                        form.setAttribute("aria-busy", "false");
-                        input.focus();
-                    } finally {
-                        token = "";
-                        keyBytes?.fill(0);
-                        busy = false;
-                    }
-                }
-
-                form.addEventListener("submit", (event) => {
-                    event.preventDefault();
-                    const retry = retryCredential;
-                    void unlock(input.value || retry?.token || "", !input.value && Boolean(retry?.fromMemory));
-                });
-                input.addEventListener("input", () => {
-                    retryCredential = null;
-                    showMessage("");
-                    if (!busy) button.textContent = "查看简历";
-                });
-
-                if (!window.isSecureContext || !window.crypto?.subtle) {
-                    input.disabled = true;
-                    button.disabled = true;
-                    showLoadState("error", "无法打开简历。");
-                    showMessage("请使用支持安全解密的现代浏览器，通过 HTTPS 打开此页面。");
-                    return;
-                }
-                if (typeof DecompressionStream !== "function") {
-                    showLoadState("error", "请更新浏览器。");
-                    showMessage("请更新浏览器后打开此页面。");
-                    return;
-                }
-
                 input.disabled = false;
                 button.disabled = false;
-                // Prefetch independently so downloading the resume never blocks typing.
-                void loadResume().catch(() => {});
-                window.addEventListener("hashchange", () => {
-                    const key = linkKey();
-                    if (key) {
-                        void unlock(key);
-                    }
-                });
-                const fragment = new URLSearchParams(location.hash.slice(1));
-                const supplied = fragment.get("pwd");
-                if (supplied !== null) {
-                    void unlock(supplied);
-                } else {
-                    const remembered = savedKey();
-                    if (remembered) void unlock(remembered, true);
-                }
-            }, { once: true });
-        })();
-    </script>
+                button.textContent = retryCredential ? "重试加载" : "查看简历";
+                form.setAttribute("aria-busy", "false");
+                input.focus();
+            } finally {
+                token = "";
+                keyBytes?.fill(0);
+                busy = false;
+            }
+        }
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const retry = retryCredential;
+            void unlock(input.value || retry?.token || "", !input.value && Boolean(retry?.fromMemory));
+        });
+        input.addEventListener("input", () => {
+            retryCredential = null;
+            showMessage("");
+            if (!busy) button.textContent = "查看简历";
+        });
+        window.addEventListener("pagehide", () => stopLoading());
+        window.addEventListener("pageshow", event => {
+            if (event.persisted && !payloadReady && !payloadFailed) startLoading();
+        });
+
+        if (!window.isSecureContext || !window.crypto?.subtle) {
+            input.disabled = true;
+            button.disabled = true;
+            showLoadState("error", "无法打开简历。");
+            showMessage("请使用支持安全解密的现代浏览器，通过 HTTPS 打开此页面。");
+            return;
+        }
+        if (typeof DecompressionStream !== "function") {
+            showLoadState("error", "请更新浏览器。");
+            showMessage("请更新浏览器后打开此页面。");
+            return;
+        }
+
+        input.disabled = false;
+        button.disabled = false;
+        // Prefetch independently so downloading the resume never blocks typing.
+        void loadResume().catch(() => {});
+        window.addEventListener("hashchange", () => {
+            const key = linkKey();
+            if (key) {
+                void unlock(key);
+            }
+        });
+        const fragment = new URLSearchParams(location.hash.slice(1));
+        const supplied = fragment.get("pwd");
+        if (supplied !== null) {
+            void unlock(supplied);
+        } else {
+            const remembered = savedKey();
+            if (remembered) void unlock(remembered, true);
+        }
+    }, { once: true });
+})();
+</script>
     <style>
         * { box-sizing: border-box; }
         html { min-height: 100%; background: #f3f4f6; }
@@ -594,6 +665,11 @@
         .message svg { flex-shrink: 0; margin-top: 3px; }
         .message.is-hint { color: #9ca3af; }
         .message.is-error { color: #b42318; }
+        .message.is-playful { align-items: center; gap: 5px; }
+        .message.is-playful svg { display: none; }
+        .message.is-playful #unlock-message-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .loading-detail { flex-shrink: 0; color: #7184a5; font: 12px/1.5 sans-serif; white-space: pre; }
+        #unlock-calculation { color: #8494ad; font: 10px/1.5 "SFMono-Regular", Consolas, monospace; }
         .load-indicator { flex: 0 1 240px; min-width: 0; margin: 0 0 0 auto; color: #6b7280; }
         .load-caption { display: flex; align-items: center; gap: 6px; min-height: 22px; }
         .load-status { flex: 1; margin: 0; font-size: 12px; line-height: 1.65; }
@@ -610,6 +686,7 @@
         }
         [data-phase="ready"] .load-spinner, [data-phase="error"] .load-spinner { display: none; }
         [data-phase="ready"] .load-complete, [data-phase="error"] .load-error { display: block; }
+        [data-phase="ready"] .load-fill { transition: none; }
         [data-phase="error"] .load-symbol { color: #b42318; }
         [data-phase="error"] .load-track { background: #f5eaea; }
         [data-phase="error"] .load-fill { background: #e0aaaa; }
@@ -641,7 +718,7 @@
                         <p id="resume-load-status" class="load-status" role="status" aria-live="polite"></p>
                         <span id="resume-load-percent" class="load-percent" aria-hidden="true">0%</span>
                     </div>
-                    <div id="resume-load-progress" class="load-track" role="progressbar" aria-label="简历下载进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <div id="resume-load-progress" class="load-track" role="progressbar" aria-label="预计加载进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                         <span class="load-fill"></span>
                     </div>
                 </div>
@@ -656,11 +733,14 @@
                         <path d="M7 11V7a5 5 0 0 1 10 0v4M12 16v4" />
                     </svg>
                     <span id="unlock-message-text">密钥会在此浏览器中记忆</span>
+                    <span id="unlock-calculation" class="loading-detail" aria-hidden="true" hidden></span>
+                    <span id="unlock-face" class="loading-detail" aria-hidden="true" hidden></span>
                 </p>
             </form>
         </section>
     </main>
-    <script type="application/json" id="resume-payload">{"version":3,"algorithm":"AES-256-GCM","compression":"gzip","path":"resume-2e2268bff5da26f295757db31e3f4e81fddf0ea3c2012ffe5df17f8b4472d04c.html.enc","sha256":"2e2268bff5da26f295757db31e3f4e81fddf0ea3c2012ffe5df17f8b4472d04c","size":970665}</script>
+    <script type="application/json" id="resume-payload">{"version":3,"algorithm":"AES-256-GCM","compression":"gzip","path":"resume-1969c693b769ad8c38695bec11073a4e50e5df6c7dfdcb4e40e2d1461529ce63.html.enc","sha256":"1969c693b769ad8c38695bec11073a4e50e5df6c7dfdcb4e40e2d1461529ce63","size":661769}</script>
+    <script type="application/json" id="loading-messages">{"messages":[{"face":"(｡･ω･｡)","text":"正在对照密码…","effect":"xor-demo"},{"face":"(・・?)","text":"正在核对作者的老家…江南皮革厂？"},{"face":"(￣▽￣;)","text":"都 6202 年了，作者还在古法编程…"},{"face":"(._.)","text":"正在翻作者的祖传硬盘…"},{"face":"(￣﹏￣)","text":"正在把简历从草稿箱里捞出来…"},{"face":"(°ー°〃)","text":"发现版本有点多，先打开这一份…"},{"face":"(ง •̀_•́)ง","text":"正在劝服务器多跑两步…"},{"face":"(:3_ヽ)_","text":"服务器说它已经很努力了…"}],"calculationNote":"演算使用随机演示数据","states":{"loading":{"status":"加载中…","button":"查看简历"},"error":{"status":"加载失败","button":"重试加载","face":"(´；ω；`)","text":"这次是真断了，点一下重试吧。"},"complete":{"status":"已就绪","button":"再看一次","face":"(｡･ω･｡)ﾉ","text":"打开了，请过目。"}}}</script>
 </body>
 
 </html>
